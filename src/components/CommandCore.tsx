@@ -111,6 +111,19 @@ export const CommandCore: React.FC<CommandCoreProps> = ({
     }
 
     try {
+      const marketSymbols = ['AAPL', 'NVDA', 'MSFT'];
+      const marketQuotes = [];
+      for (const symbol of marketSymbols) {
+        try {
+          const marketResponse = await fetch(`/api/market/quote?symbol=${symbol}`);
+          if (!marketResponse.ok) continue;
+          const marketPayload = await marketResponse.json();
+          if (marketPayload?.success && marketPayload.data) marketQuotes.push(marketPayload.data);
+        } catch {
+          // Market data is supplemental; intelligence remains available without it.
+        }
+      }
+
       const response = await fetch('/api/gemini/command', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -122,6 +135,13 @@ export const CommandCore: React.FC<CommandCoreProps> = ({
             nrr: '118.2%',
             pipeline: '$14.2M',
             activeOrgs: 1428,
+            marketData: marketQuotes.map((quote) => ({
+              symbol: quote.symbol,
+              price: quote.price,
+              changePercent: quote.changePercent,
+              source: quote.source,
+              latestTradingDay: quote.latestTradingDay,
+            })),
           },
         }),
       });
