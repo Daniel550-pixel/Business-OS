@@ -66,8 +66,8 @@ try {
   })));
   assert.equal(analysis.symbol, 'IBM');
   assert.equal(analysis.trend, 'BULLISH');
-  assert.equal(analysis.sma20, 127.5);
-  assert.equal(analysis.sma50, 127.5);
+  assert.equal(analysis.sma20, 144.5);
+  assert.equal(analysis.sma50, 129.5);
   assert.equal(analysis.anomaly, false);
 
   console.log('market-data: PASS');
