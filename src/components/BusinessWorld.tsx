@@ -125,6 +125,45 @@ export const BusinessWorld: React.FC<BusinessWorldProps> = ({
   const onSelectNodeRef = useRef(onSelectNode);
   const onQuickInspectNodeRef = useRef(onQuickInspectNode);
 
+  const [marketPulse, setMarketPulse] = useState<{ symbol: string; price: number; changePercent: number }[]>([]);
+  const [marketEvent, setMarketEvent] = useState<{ trend: string; anomaly: boolean; score: number } | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    const loadMarketPulse = async () => {
+      try {
+        const symbols = ['AAPL', 'NVDA', 'MSFT'];
+        const quotes: { symbol: string; price: number; changePercent: number }[] = [];
+        const analyses: { trend: string; anomaly: boolean; anomalyScore: number }[] = [];
+        for (const symbol of symbols) {
+          const response = await fetch(`/api/market/quote?symbol=${symbol}`);
+          if (response.ok) {
+            const payload = await response.json();
+            if (payload?.success && payload.data) quotes.push({ symbol: payload.data.symbol, price: payload.data.price, changePercent: payload.data.changePercent });
+          }
+          const analysisResponse = await fetch(`/api/market/analysis?symbol=${symbol}`);
+          if (analysisResponse.ok) {
+            const analysisPayload = await analysisResponse.json();
+            if (analysisPayload?.success && analysisPayload.data) analyses.push({ trend: analysisPayload.data.trend, anomaly: analysisPayload.data.anomaly, anomalyScore: analysisPayload.data.anomalyScore });
+          }
+        }
+        if (!cancelled) {
+          setMarketPulse(quotes);
+          const anomalies = analyses.filter(a => a.anomaly);
+          const bullish = analyses.filter(a => a.trend === 'BULLISH').length;
+          const bearish = analyses.filter(a => a.trend === 'BEARISH').length;
+          const trend = bullish > bearish ? 'BULLISH' : bearish > bullish ? 'BEARISH' : 'MIXED';
+          setMarketEvent({ trend, anomaly: anomalies.length > 0, score: anomalies.length ? Math.max(...anomalies.map(a => a.anomalyScore)) : 0 });
+        }
+      } catch {
+        if (!cancelled) setMarketPulse([]);
+      }
+    };
+    void loadMarketPulse();
+    const timer = window.setInterval(loadMarketPulse, 60_000);
+    return () => { cancelled = true; window.clearInterval(timer); };
+  }, []);
+
   const entities = useMemo<Entity3D[]>(() => {
     const source = nodes.length ? nodes : FALLBACK_ENTITIES;
     return source.slice(0, 12).map((n, i) => ({
@@ -315,18 +354,21 @@ export const BusinessWorld: React.FC<BusinessWorldProps> = ({
       const color=statusColor(entity.status);
       const selected=id===selectedId;
       const highlighted=highlightedNodeIds.includes(id);
+      const marketLinked=id === 'finance' || id === 'revenue';
+      const marketCritical=marketLinked && Boolean(marketEvent?.anomaly);
+      const marketColor=marketEvent?.trend === 'BULLISH' ? 0x63f5ae : marketEvent?.trend === 'BEARISH' ? 0xff5574 : 0xffc85a;
       const core=group.children[0] as THREE.Mesh;
       const ring=group.children[1] as THREE.Mesh;
       if(core.material instanceof THREE.MeshStandardMaterial){
-        core.material.emissive.setHex(selected?0x6ff3ff:highlighted?0x9a70ff:color);
-        core.material.emissiveIntensity=selected?1.0:highlighted?.72:.38;
+        core.material.emissive.setHex(selected?0x6ff3ff:highlighted?0x9a70ff:marketCritical?marketColor:color);
+        core.material.emissiveIntensity=selected?1.0:highlighted?.72:marketCritical?0.82:.38;
       }
       if(ring.material instanceof THREE.MeshBasicMaterial){
         ring.material.color.setHex(selected?0x8fffff:highlighted?0xa77cff:color);
         ring.material.opacity=selected?.95:.58;
       }
     });
-  }, [selectedId,highlightedNodeIds,entities]);
+  }, [selectedId,highlightedNodeIds,entities,marketEvent]);
 
   const resetCamera=()=>sceneRef.current?.controls.reset();
   const zoom=(delta:number)=>{
@@ -371,11 +413,77 @@ export const BusinessWorld: React.FC<BusinessWorldProps> = ({
         </div>
       </header>
 
+      <div className="absolute right-5 top-[88px] z-20 w-[250px] rounded-2xl border border-white/10 bg-[#050a12]/78 backdrop-blur-2xl shadow-[0_18px_60px_rgba(0,0,0,.38)]">
+        <div className="px-4 py-3 border-b border-white/[0.07] flex items-center justify-between">
+          <div><div className="text-[9px] font-mono tracking-[0.18em] text-cyan-300">MARKET TELEMETRY</div><div className="mt-1 text-sm font-semibold text-white">External pulse</div></div>
+          <span className={`text-[8px] font-mono ${marketEvent?.anomaly ? 'text-rose-300' : 'text-emerald-300'}`}>{marketEvent?.anomaly ? 'EVENT DETECTED' : 'ALPHA VANTAGE'}</span>
+        </div>
+        <div className="p-3 grid grid-cols-3 gap-2">
+          {marketPulse.map((quote) => (
+            <div key={quote.symbol} className="rounded-lg bg-white/[0.03] border border-white/[0.06] p-2">
+              <div className="text-[9px] font-mono text-slate-400">{quote.symbol}</div>
+              <div className="mt-1 text-[11px] font-mono text-cyan-200">${quote.price.toFixed(2)}</div>
+              <div className={`mt-0.5 text-[8px] font-mono ${quote.changePercent >= 0 ? 'text-emerald-300' : 'text-rose-300'}`}>
+                {quote.changePercent >= 0 ? '+' : ''}{quote.changePercent.toFixed(2)}%
+              </div>
+            </div>
+          ))}
+          {marketPulse.length === 0 && <div className="col-span-3 text-[9px] font-mono text-slate-500">External market pulse unavailable.</div>}
+          {marketEvent && <div className="col-span-3 pt-2 border-t border-white/[0.06] text-[8px] font-mono text-slate-400">GRAPH EVENT: <span className={marketEvent.trend === 'BULLISH' ? 'text-emerald-300' : marketEvent.trend === 'BEARISH' ? 'text-rose-300' : 'text-amber-300'}>{marketEvent.trend}</span>{marketEvent.anomaly ? ` · ANOMALY ${marketEvent.score.toFixed(2)}σ` : ' · NORMAL'}</div>}
+        </div>
+      </div>
+
+      <div className="absolute left-5 top-[88px] z-20 w-[250px] rounded-2xl border border-white/10 bg-[#050a12]/78 backdrop-blur-2xl shadow-[0_18px_60px_rgba(0,0,0,.38)]">
+        <div className="px-4 py-3 border-b border-white/[0.07]">
+          <div className="flex items-center justify-between">
+            <span className="text-[9px] font-mono tracking-[0.18em] text-cyan-300">WORLD GRAPH</span>
+            <span className="text-[9px] font-mono text-slate-600">L1—L5</span>
+          </div>
+          <div className="mt-1 text-sm font-semibold text-white">Business topology</div>
+        </div>
+        <div className="p-3 space-y-2">
+          <div className="flex items-center justify-between text-[10px] font-mono">
+            <span className="text-slate-500">ENTITIES</span><span className="text-slate-200">{entities.length}</span>
+          </div>
+          <div className="flex items-center justify-between text-[10px] font-mono">
+            <span className="text-slate-500">SELECTED</span><span className="text-cyan-300">{active?.label || '—'}</span>
+          </div>
+          <div className="flex items-center justify-between text-[10px] font-mono">
+            <span className="text-slate-500">MODE</span><span className={simulation ? 'text-violet-300' : 'text-emerald-300'}>{simulation ? 'SIMULATION' : 'OBSERVE'}</span>
+          </div>
+          <div className="pt-2 border-t border-white/[0.06] flex flex-wrap gap-1.5">
+            {entities.slice(0,6).map((entity) => (
+              <button
+                key={entity.id}
+                onClick={() => {
+                  setSelectedId(entity.id);
+                  const source = nodesRef.current.find(n => n.id === entity.id);
+                  if (source) onSelectNodeRef.current?.(source);
+                }}
+                className={`px-2 py-1 rounded-md border text-[9px] font-mono transition-all ${selectedId === entity.id ? 'border-cyan-400/45 bg-cyan-400/10 text-cyan-200' : 'border-white/[0.07] bg-white/[0.025] text-slate-500 hover:text-slate-200 hover:border-white/15'}`}
+              >
+                {entity.label}
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+
       <div className="absolute left-5 bottom-5 z-20 flex flex-col gap-1">
         <button onClick={()=>zoom(-4)} className="p-2 rounded-lg border border-white/10 bg-[#0b1018]/90 text-slate-300 hover:text-white"><Plus size={15}/></button>
         <button onClick={()=>zoom(4)} className="p-2 rounded-lg border border-white/10 bg-[#0b1018]/90 text-slate-300 hover:text-white"><Minus size={15}/></button>
         <button onClick={()=>{const world=sceneRef.current;if(world){const offset=world.camera.position.clone().sub(world.controls.target).applyAxisAngle(new THREE.Vector3(0,1,0),.35);world.camera.position.copy(world.controls.target).add(offset);world.camera.lookAt(world.controls.target);}}} className="p-2 rounded-lg border border-white/10 bg-[#0b1018]/90 text-slate-300 hover:text-white"><RotateCcw size={15}/></button>
         <button onClick={()=>{const world=sceneRef.current;if(world){const offset=world.camera.position.clone().sub(world.controls.target).applyAxisAngle(new THREE.Vector3(0,1,0),-.35);world.camera.position.copy(world.controls.target).add(offset);world.camera.lookAt(world.controls.target);}}} className="p-2 rounded-lg border border-white/10 bg-[#0b1018]/90 text-slate-300 hover:text-white"><Scan size={15}/></button>
+      </div>
+
+      <div className="absolute left-1/2 -translate-x-1/2 bottom-5 z-20 hidden md:flex items-center gap-2 px-3 py-2 rounded-xl border border-white/10 bg-[#050a12]/76 backdrop-blur-xl text-[9px] font-mono shadow-[0_12px_40px_rgba(0,0,0,.32)]">
+        <span className="text-slate-500">FOCUS</span>
+        <span className="text-white font-semibold">{active?.label || 'Business Core'}</span>
+        <span className="text-slate-700">/</span>
+        <span className="text-slate-500">STATUS</span>
+        <span className={active?.status === 'critical' ? 'text-rose-300' : active?.status === 'warning' ? 'text-amber-300' : 'text-emerald-300'}>{active?.status?.toUpperCase() || 'ACTIVE'}</span>
+        <span className="text-slate-700">/</span>
+        <span className="text-cyan-300">CLICK ENTITY TO INSPECT</span>
       </div>
 
       {showLegend&&<div className="absolute left-[68px] bottom-5 z-20 p-3 rounded-xl border border-white/10 bg-[#050a12]/72 backdrop-blur-xl text-[9px] font-mono text-slate-400">
