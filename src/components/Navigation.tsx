@@ -105,7 +105,7 @@ export const Navigation: React.FC<NavigationProps> = ({
   const stateBadge = getSystemStateBadge();
 
   return (
-    <header className="sticky top-0 z-40 w-full bg-[#080b11]/90 backdrop-blur-xl border-b border-white/[0.07]">
+    <header className="sticky top-0 z-40 w-full os-glass-strong bg-[#0B0E14]/90 os-glass-strong backdrop-blur-xl border-b border-white/[0.07]">
       {/* Top Telemetry Bar */}
       <div className="flex items-center justify-between px-4 lg:px-6 h-12 border-b border-white/[0.04]">
         {/* Left branding and live pulse */}
@@ -157,7 +157,7 @@ export const Navigation: React.FC<NavigationProps> = ({
         {/* Center Prompt Trigger Button */}
         <button
           onClick={handleOpenPrompt}
-          className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/[0.03] hover:bg-white/[0.07] border border-white/[0.08] text-xs text-slate-300 transition-all group"
+          className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/[0.03] hover:bg-white/[0.07] border border-white/[0.07] text-xs text-slate-300 transition-all group"
         >
           <Sparkles className="w-3.5 h-3.5 text-cyan-400 group-hover:scale-110 transition-transform" />
           <span className="font-mono text-slate-400 hidden md:inline">Ask AI Command Core...</span>
@@ -194,7 +194,7 @@ export const Navigation: React.FC<NavigationProps> = ({
           </div>
 
           {/* AI Status Badge */}
-          <div className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-white/[0.02] border border-white/[0.06] text-[10px] font-mono">
+          <div className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-white/[0.025] border border-white/[0.06] text-[10px] font-mono">
             <span className={`w-1.5 h-1.5 rounded-full ${geminiActive ? 'bg-cyan-400' : 'bg-emerald-400'}`} />
             <span className="text-slate-300 hidden sm:inline">{geminiActive ? 'Gemini 3.8 Flash' : 'AIOS Core'}</span>
           </div>
@@ -202,7 +202,7 @@ export const Navigation: React.FC<NavigationProps> = ({
       </div>
 
       {/* Main Navigation Tab Strip */}
-      <div className="flex items-center px-4 lg:px-6 overflow-x-auto no-scrollbar gap-1 py-1.5">
+      <div className="flex items-center px-4 lg:px-6 overflow-x-auto os-grid no-scrollbar gap-1 py-1.5">
         {navItems.map((item) => {
           const isActive =
             activeCurrentView === item.id ||
