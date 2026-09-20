@@ -255,9 +255,9 @@ export const BusinessWorld: React.FC<BusinessWorldProps> = ({
   };
 
   return (
-    <div className="relative w-full h-[calc(100vh-100px)] min-h-[640px] bg-[#07090e] border border-white/[0.08] rounded-2xl overflow-hidden flex flex-col font-sans select-none">
+    <div className="relative w-full h-[calc(100vh-100px)] min-h-[640px] os-cyber-corners bg-[#0A0C10] border border-white/[0.07] rounded-xl overflow-hidden os-scanlines flex flex-col font-sans select-none">
       {/* Top Telemetry & Status Bar (Screenshot 2) */}
-      <div className="h-14 border-b border-white/[0.08] bg-[#090d16]/90 px-5 flex items-center justify-between z-20 shrink-0 backdrop-blur-md">
+      <div className="h-14 border-b border-white/[0.07] bg-[#0B0E14]/90 os-glass-strong px-5 flex items-center justify-between z-20 shrink-0 backdrop-blur-md">
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-2">
             <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-950/60 border border-emerald-500/40 text-[11px] font-mono font-bold text-emerald-400">
@@ -573,7 +573,7 @@ export const BusinessWorld: React.FC<BusinessWorldProps> = ({
           })}
 
           {/* Bottom Timeline Scrubber (Screenshot 2) */}
-          <div className="absolute bottom-5 left-1/2 -translate-x-1/2 z-20 w-[min(540px,calc(100%-40px))] p-3 rounded-2xl bg-[#090d16]/90 border border-white/[0.12] shadow-2xl backdrop-blur-xl">
+          <div className="absolute bottom-5 left-1/2 -translate-x-1/2 z-20 w-[min(540px,calc(100%-40px))] p-3 rounded-xl os-surface/90 os-glass-strong border border-white/[0.12] shadow-2xl backdrop-blur-xl">
             <div className="flex items-center justify-between text-[11px] font-mono mb-2">
               <span className="text-slate-500 uppercase tracking-wider">PAST</span>
               <span className="text-cyan-300 font-bold tracking-wider">
@@ -612,10 +612,10 @@ export const BusinessWorld: React.FC<BusinessWorldProps> = ({
         </div>
 
         {/* Right Sidebar: Contextual Intelligence (Screenshot 2) */}
-        <aside className="w-[360px] border-l border-white/[0.08] bg-[#090d16]/95 backdrop-blur-xl p-5 overflow-y-auto z-20 flex flex-col justify-between shrink-0 shadow-2xl">
+        <aside className="w-[360px] border-l border-white/[0.07] bg-[#090d16]/95 backdrop-blur-xl p-5 overflow-y-auto z-20 flex flex-col justify-between shrink-0 shadow-2xl">
           <div className="space-y-5">
             {/* Header */}
-            <div className="flex items-center justify-between border-b border-white/[0.08] pb-3">
+            <div className="flex items-center justify-between border-b border-white/[0.07] pb-3">
               <div>
                 <div className="text-xs font-bold font-mono text-white tracking-wider uppercase">
                   CONTEXTUAL INTELLIGENCE
@@ -648,7 +648,7 @@ export const BusinessWorld: React.FC<BusinessWorldProps> = ({
                 {activeNode.findings.map((finding, idx) => (
                   <div
                     key={idx}
-                    className="flex items-start gap-2 p-2.5 rounded-xl bg-white/[0.02] border border-white/[0.05] text-xs text-slate-300 leading-relaxed"
+                    className="flex items-start gap-2 p-2.5 rounded-xl bg-white/[0.025] border border-white/[0.05] text-xs text-slate-300 leading-relaxed"
                   >
                     <CheckCircle2 className="w-4 h-4 text-cyan-400 shrink-0 mt-0.5" />
                     <span>{finding}</span>
@@ -658,7 +658,7 @@ export const BusinessWorld: React.FC<BusinessWorldProps> = ({
             </div>
 
             {/* Recent Evidence Logs Accordion */}
-            <div className="border border-white/[0.08] rounded-xl bg-black/40 overflow-hidden">
+            <div className="border border-white/[0.07] rounded-xl bg-black/40 overflow-hidden">
               <button
                 onClick={() => setShowLogsAccordion(!showLogsAccordion)}
                 className="w-full px-3.5 py-2.5 flex items-center justify-between text-xs font-mono font-bold text-slate-300 hover:text-white"
