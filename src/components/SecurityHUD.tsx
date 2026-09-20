@@ -48,6 +48,8 @@ const layers = [
 export const SecurityHUD: React.FC = () => {
   const [payload, setPayload] = useState<SecurityPayload | null>(null);
   const [selectedSeverity, setSelectedSeverity] = useState('ALL');
+  const [operator, setOperator] = useState('Executive Operator');
+  const [actionMessage, setActionMessage] = useState('');
 
   const refresh = async () => {
     try {
@@ -74,6 +76,13 @@ export const SecurityHUD: React.FC = () => {
   }, [payload, selectedSeverity]);
 
   const state = payload?.status.state || 'OFFLINE';
+  const runOperatorAction = async (action: string) => {
+    setActionMessage('');
+    const response = await fetch('/api/security/operator-action', { method:'POST', headers:{'content-type':'application/json'}, body:JSON.stringify({ action, authorizedBy:operator, humanApproval:true, targetResource:'security-runtime' }) });
+    const data = await response.json();
+    setActionMessage(data.success ? action.toUpperCase()+' REQUESTED' : data.error || 'ACTION DENIED');
+    refresh();
+  };
   const meta = stateMeta[state];
 
   return (
@@ -133,6 +142,17 @@ export const SecurityHUD: React.FC = () => {
               ))}
             </div>
           </div>
+        </div>
+
+        <div className="mt-4 border border-white/10 bg-white/[.02] p-4">
+          <div className="text-[10px] tracking-[.24em] text-white/45">AUTHORIZED OPERATOR CONTROLS</div>
+          <div className="mt-3 flex flex-wrap gap-2">
+            <input value={operator} onChange={(e)=>setOperator(e.target.value)} aria-label="Operator identity" className="border border-white/10 bg-black px-3 py-2 text-[10px] text-white outline-none" />
+            {['acknowledge','investigate','revoke','isolate','quarantine','rollback'].map((action)=>(
+              <button key={action} onClick={()=>runOperatorAction(action)} className="border border-white/10 px-3 py-2 text-[9px] tracking-wider text-white/60 hover:border-cyan-400/40 hover:text-cyan-300">{action.toUpperCase()}</button>
+            ))}
+          </div>
+          {actionMessage && <div className="mt-3 text-[9px] tracking-wider text-cyan-300">{actionMessage}</div>}
         </div>
 
         <div className="mt-4 grid grid-cols-2 md:grid-cols-4 gap-px bg-white/10 border border-white/10">
