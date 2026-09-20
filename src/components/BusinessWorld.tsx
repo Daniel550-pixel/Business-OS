@@ -126,6 +126,7 @@ export const BusinessWorld: React.FC<BusinessWorldProps> = ({
   const onQuickInspectNodeRef = useRef(onQuickInspectNode);
 
   const [marketPulse, setMarketPulse] = useState<{ symbol: string; price: number; changePercent: number }[]>([]);
+  const [marketEvent, setMarketEvent] = useState<{ trend: string; anomaly: boolean; score: number } | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -133,15 +134,27 @@ export const BusinessWorld: React.FC<BusinessWorldProps> = ({
       try {
         const symbols = ['AAPL', 'NVDA', 'MSFT'];
         const quotes: { symbol: string; price: number; changePercent: number }[] = [];
+        const analyses: { trend: string; anomaly: boolean; anomalyScore: number }[] = [];
         for (const symbol of symbols) {
           const response = await fetch(`/api/market/quote?symbol=${symbol}`);
-          if (!response.ok) continue;
-          const payload = await response.json();
-          if (payload?.success && payload.data) {
-            quotes.push({ symbol: payload.data.symbol, price: payload.data.price, changePercent: payload.data.changePercent });
+          if (response.ok) {
+            const payload = await response.json();
+            if (payload?.success && payload.data) quotes.push({ symbol: payload.data.symbol, price: payload.data.price, changePercent: payload.data.changePercent });
+          }
+          const analysisResponse = await fetch(`/api/market/analysis?symbol=${symbol}`);
+          if (analysisResponse.ok) {
+            const analysisPayload = await analysisResponse.json();
+            if (analysisPayload?.success && analysisPayload.data) analyses.push({ trend: analysisPayload.data.trend, anomaly: analysisPayload.data.anomaly, anomalyScore: analysisPayload.data.anomalyScore });
           }
         }
-        if (!cancelled) setMarketPulse(quotes);
+        if (!cancelled) {
+          setMarketPulse(quotes);
+          const anomalies = analyses.filter(a => a.anomaly);
+          const bullish = analyses.filter(a => a.trend === 'BULLISH').length;
+          const bearish = analyses.filter(a => a.trend === 'BEARISH').length;
+          const trend = bullish > bearish ? 'BULLISH' : bearish > bullish ? 'BEARISH' : 'MIXED';
+          setMarketEvent({ trend, anomaly: anomalies.length > 0, score: anomalies.length ? Math.max(...anomalies.map(a => a.anomalyScore)) : 0 });
+        }
       } catch {
         if (!cancelled) setMarketPulse([]);
       }
@@ -341,18 +354,21 @@ export const BusinessWorld: React.FC<BusinessWorldProps> = ({
       const color=statusColor(entity.status);
       const selected=id===selectedId;
       const highlighted=highlightedNodeIds.includes(id);
+      const marketLinked=id === 'finance' || id === 'revenue';
+      const marketCritical=marketLinked && Boolean(marketEvent?.anomaly);
+      const marketColor=marketEvent?.trend === 'BULLISH' ? 0x63f5ae : marketEvent?.trend === 'BEARISH' ? 0xff5574 : 0xffc85a;
       const core=group.children[0] as THREE.Mesh;
       const ring=group.children[1] as THREE.Mesh;
       if(core.material instanceof THREE.MeshStandardMaterial){
-        core.material.emissive.setHex(selected?0x6ff3ff:highlighted?0x9a70ff:color);
-        core.material.emissiveIntensity=selected?1.0:highlighted?.72:.38;
+        core.material.emissive.setHex(selected?0x6ff3ff:highlighted?0x9a70ff:marketCritical?marketColor:color);
+        core.material.emissiveIntensity=selected?1.0:highlighted?.72:marketCritical?0.82:.38;
       }
       if(ring.material instanceof THREE.MeshBasicMaterial){
         ring.material.color.setHex(selected?0x8fffff:highlighted?0xa77cff:color);
         ring.material.opacity=selected?.95:.58;
       }
     });
-  }, [selectedId,highlightedNodeIds,entities]);
+  }, [selectedId,highlightedNodeIds,entities,marketEvent]);
 
   const resetCamera=()=>sceneRef.current?.controls.reset();
   const zoom=(delta:number)=>{
@@ -400,7 +416,7 @@ export const BusinessWorld: React.FC<BusinessWorldProps> = ({
       <div className="absolute right-5 top-[88px] z-20 w-[250px] rounded-2xl border border-white/10 bg-[#050a12]/78 backdrop-blur-2xl shadow-[0_18px_60px_rgba(0,0,0,.38)]">
         <div className="px-4 py-3 border-b border-white/[0.07] flex items-center justify-between">
           <div><div className="text-[9px] font-mono tracking-[0.18em] text-cyan-300">MARKET TELEMETRY</div><div className="mt-1 text-sm font-semibold text-white">External pulse</div></div>
-          <span className="text-[8px] font-mono text-emerald-300">ALPHA VANTAGE</span>
+          <span className={`text-[8px] font-mono ${marketEvent?.anomaly ? 'text-rose-300' : 'text-emerald-300'}`}>{marketEvent?.anomaly ? 'EVENT DETECTED' : 'ALPHA VANTAGE'}</span>
         </div>
         <div className="p-3 grid grid-cols-3 gap-2">
           {marketPulse.map((quote) => (
@@ -413,6 +429,7 @@ export const BusinessWorld: React.FC<BusinessWorldProps> = ({
             </div>
           ))}
           {marketPulse.length === 0 && <div className="col-span-3 text-[9px] font-mono text-slate-500">External market pulse unavailable.</div>}
+          {marketEvent && <div className="col-span-3 pt-2 border-t border-white/[0.06] text-[8px] font-mono text-slate-400">GRAPH EVENT: <span className={marketEvent.trend === 'BULLISH' ? 'text-emerald-300' : marketEvent.trend === 'BEARISH' ? 'text-rose-300' : 'text-amber-300'}>{marketEvent.trend}</span>{marketEvent.anomaly ? ` · ANOMALY ${marketEvent.score.toFixed(2)}σ` : ' · NORMAL'}</div>}
         </div>
       </div>
 
