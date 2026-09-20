@@ -15,7 +15,7 @@ import {
   ExternalLink,
   Flame,
 } from 'lucide-react';
-import { ProposedAction, AICommandResponse, Mission } from '../types';
+import { ProposedAction, AICommandResponse, Mission, TemporalEpoch, ViewMode, OperatingMode } from '../types';
 
 interface CommandCoreProps {
   onExecuteAction: (action: ProposedAction) => void;
@@ -23,6 +23,12 @@ interface CommandCoreProps {
   onHighlightNodes?: (nodes: string[]) => void;
   isOpenAsModal?: boolean;
   onCloseModal?: () => void;
+  onOpenFocus?: (objectiveId: string) => void;
+  onSetEpoch?: (epoch: TemporalEpoch) => void;
+  onOpenScenarioModeling?: () => void;
+  onSelectEntityId?: (entityId: string) => void;
+  onNavigateToView?: (view: ViewMode) => void;
+  onSetOperatingMode?: (mode: OperatingMode) => void;
 }
 
 export const CommandCore: React.FC<CommandCoreProps> = ({
@@ -31,6 +37,12 @@ export const CommandCore: React.FC<CommandCoreProps> = ({
   onHighlightNodes,
   isOpenAsModal = false,
   onCloseModal,
+  onOpenFocus,
+  onSetEpoch,
+  onOpenScenarioModeling,
+  onSelectEntityId,
+  onNavigateToView,
+  onSetOperatingMode,
 }) => {
   const [inputQuery, setInputQuery] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
@@ -39,16 +51,45 @@ export const CommandCore: React.FC<CommandCoreProps> = ({
   const [executedActionIds, setExecutedActionIds] = useState<string[]>([]);
 
   const sampleQueries = [
-    'Analyze why revenue dropped this week and determine what we should investigate.',
-    'Find unusual customer behavior and seat contraction risks.',
-    'Create a mission to investigate the sales decline.',
-    'Show me our largest operational risks and cloud waste.',
-    'Which enterprise expansion opportunities should we prioritize?',
+    'Investigate the enterprise revenue anomaly and cause analysis.',
+    'Compare our current operating state with six months ago.',
+    'Show me customers with declining activity and seat contraction.',
+    'Simulate future scenarios if enterprise growth slows down.',
+    'Switch to executive cockpit mode with top decisions.',
   ];
 
   const handleRunCommand = async (queryToRun?: string) => {
     const query = queryToRun || inputQuery;
     if (!query.trim()) return;
+
+    const lower = query.toLowerCase();
+
+    // Natural language navigation triggers
+    if (lower.includes('investigate') && (lower.includes('revenue') || lower.includes('anomaly')) && onOpenFocus) {
+      if (onCloseModal) onCloseModal();
+      onOpenFocus('focus_revenue_anomaly');
+      return;
+    }
+    if ((lower.includes('six months ago') || lower.includes('january') || lower.includes('historical')) && onSetEpoch) {
+      onSetEpoch('JAN');
+      if (onCloseModal) onCloseModal();
+      return;
+    }
+    if ((lower.includes('simulate') || lower.includes('scenario') || lower.includes('what would happen')) && onOpenScenarioModeling) {
+      if (onCloseModal) onCloseModal();
+      onOpenScenarioModeling();
+      return;
+    }
+    if ((lower.includes('declining') || lower.includes('customer') || lower.includes('freight')) && onSelectEntityId) {
+      if (onCloseModal) onCloseModal();
+      onSelectEntityId('cust_globalfreight');
+      return;
+    }
+    if ((lower.includes('executive mode') || lower.includes('executive cockpit')) && onSetOperatingMode) {
+      if (onCloseModal) onCloseModal();
+      onSetOperatingMode('executive');
+      return;
+    }
 
     setIsProcessing(true);
     setResult(null);

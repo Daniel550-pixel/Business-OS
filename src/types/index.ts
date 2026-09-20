@@ -14,7 +14,108 @@ export type ViewMode =
   | 'automations'
   | 'settings';
 
-export type OperatingMode = 'executive' | 'deep-work' | 'deep_work';
+export type OperatingMode = 'executive' | 'deep-work' | 'deep_work' | 'operate';
+
+export type SystemRuntimeState =
+  | 'calm'
+  | 'investigating'
+  | 'risk_detected'
+  | 'mission_executing'
+  | 'major_decision';
+
+export type HierarchyLevel = 'company' | 'division' | 'operation' | 'customer' | 'transaction';
+
+export interface HierarchyEntity {
+  id: string;
+  level: HierarchyLevel;
+  parentId?: string;
+  name: string;
+  code: string;
+  status: 'optimal' | 'warning' | 'critical' | 'active';
+  revenueOrMetric: string;
+  metricLabel: string;
+  healthScore: number;
+  headcountOrCapacity: string;
+  summary: string;
+  ownerAgent: string;
+  signals: {
+    label: string;
+    trend: 'up' | 'down' | 'neutral';
+    type: 'risk' | 'growth' | 'operational';
+  }[];
+  activeAgents: string[];
+  childrenCount?: number;
+  details?: Record<string, any>;
+  evidence?: {
+    transactionsCount: number;
+    crmEventsCount: number;
+    historicalComparisons: number;
+    primaryFactors: { name: string; weight: number; impact: string }[];
+    traces: { id: string; timestamp: string; text: string }[];
+  };
+}
+
+export interface AIActivityTick {
+  id: string;
+  timestamp: string;
+  agentName: string;
+  agentRole: string;
+  action: string;
+  target: string;
+  category: 'telemetry' | 'reasoning' | 'comparison' | 'proposal' | 'policy_gate';
+  confidence?: number;
+  entityId?: string;
+}
+
+export type TemporalEpoch =
+  | 'JAN'
+  | 'FEB'
+  | 'MAR'
+  | 'APR'
+  | 'MAY'
+  | 'JUN'
+  | 'NOW'
+  | 'SIM_3M'
+  | 'SIM_6M';
+
+export interface ScenarioModel {
+  id: 'scenario_a' | 'scenario_b' | 'scenario_c';
+  name: string;
+  type: 'baseline' | 'aggressive' | 'stress_test';
+  projectedArr: string;
+  arrGrowth: string;
+  projectedRunway: string;
+  confidence: number;
+  keyAssumptions: string[];
+  requiredDecisions: string[];
+  riskFactors: string[];
+}
+
+export interface FocusObjective {
+  id: string;
+  title: string;
+  metricName: string;
+  metricDelta: string;
+  detectedAt: string;
+  causeAnalysis: {
+    segment: string;
+    percentage: number;
+    delta: string;
+    detail: string;
+  }[];
+  findings: {
+    id: string;
+    number: string;
+    headline: string;
+    description: string;
+    confidence: number;
+    evidenceId: string;
+  }[];
+  confidence: number;
+  recommendation: string;
+  proposedAction: ProposedAction;
+  affectedEntityIds: string[];
+}
 
 export type RiskLevel = 'low' | 'medium' | 'high' | 'critical';
 

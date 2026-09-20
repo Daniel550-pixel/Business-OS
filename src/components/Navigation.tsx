@@ -15,8 +15,10 @@ import {
   Radio,
   Sliders,
   Sparkles,
+  Layers,
+  AlertTriangle,
 } from 'lucide-react';
-import { ViewMode, OperatingMode } from '../types';
+import { ViewMode, OperatingMode, SystemRuntimeState } from '../types';
 
 interface NavigationProps {
   currentView?: ViewMode;
@@ -24,6 +26,8 @@ interface NavigationProps {
   onViewChange: (view: ViewMode) => void;
   operatingMode: OperatingMode;
   onOperatingModeChange: (mode: OperatingMode) => void;
+  systemState?: SystemRuntimeState;
+  onSystemStateChange?: (state: SystemRuntimeState) => void;
   onOpenCommandPalette?: () => void;
   onOpenCommandCore?: () => void;
   activeMissionsCount?: number;
@@ -38,6 +42,8 @@ export const Navigation: React.FC<NavigationProps> = ({
   onViewChange,
   operatingMode,
   onOperatingModeChange,
+  systemState = 'risk_detected',
+  onSystemStateChange,
   onOpenCommandPalette,
   onOpenCommandCore,
   activeMissionsCount = 3,
@@ -69,7 +75,7 @@ export const Navigation: React.FC<NavigationProps> = ({
 
   const navItems: { id: ViewMode; label: string; icon: React.ReactNode; badge?: number; badgeColor?: string }[] = [
     { id: 'command-center', label: 'Command Center', icon: <Command className="w-3.5 h-3.5" /> },
-    { id: 'business-world', label: 'Business World', icon: <Globe className="w-3.5 h-3.5" />, badge: criticalAnomaliesCount > 0 ? criticalAnomaliesCount : undefined, badgeColor: 'bg-rose-500/20 text-rose-400 border border-rose-500/30' },
+    { id: 'business-world', label: 'Digital Twin (L1-L5)', icon: <Globe className="w-3.5 h-3.5" />, badge: criticalAnomaliesCount > 0 ? criticalAnomaliesCount : undefined, badgeColor: 'bg-rose-500/20 text-rose-400 border border-rose-500/30' },
     { id: 'missions', label: 'Missions', icon: <Compass className="w-3.5 h-3.5" />, badge: activeMissionsCount, badgeColor: 'bg-cyan-500/20 text-cyan-400 border border-cyan-500/30' },
     { id: 'agents', label: 'AI Agents', icon: <Cpu className="w-3.5 h-3.5" />, badge: 8, badgeColor: 'bg-indigo-500/20 text-indigo-300 border border-indigo-500/30' },
     { id: 'finance', label: 'Finance', icon: <DollarSign className="w-3.5 h-3.5" /> },
@@ -80,6 +86,23 @@ export const Navigation: React.FC<NavigationProps> = ({
     { id: 'intelligence', label: 'Live Stream', icon: <Radio className="w-3.5 h-3.5" />, badge: criticalAnomaliesCount, badgeColor: 'bg-amber-500/20 text-amber-300 border border-amber-500/30' },
     { id: 'automations', label: 'Policy & Audit', icon: <ShieldCheck className="w-3.5 h-3.5" />, badge: pendingApprovalsCount > 0 ? pendingApprovalsCount : undefined, badgeColor: 'bg-amber-400/20 text-amber-300 border border-amber-400/40' },
   ];
+
+  const getSystemStateBadge = () => {
+    switch (systemState) {
+      case 'calm':
+        return { label: 'STATE: NORMAL CALM', color: 'bg-slate-800/80 text-slate-300 border-slate-700/50' };
+      case 'investigating':
+        return { label: 'STATE: INVESTIGATION ACTIVE', color: 'bg-cyan-950/70 text-cyan-300 border-cyan-500/40 animate-pulse' };
+      case 'risk_detected':
+        return { label: 'STATE: RISK DETECTED', color: 'bg-rose-950/70 text-rose-300 border-rose-500/40' };
+      case 'mission_executing':
+        return { label: 'STATE: MISSION EXECUTING', color: 'bg-purple-950/70 text-purple-300 border-purple-500/40' };
+      case 'major_decision':
+        return { label: 'STATE: MAJOR DECISION REQUIRED', color: 'bg-amber-950/70 text-amber-300 border-amber-500/40' };
+    }
+  };
+
+  const stateBadge = getSystemStateBadge();
 
   return (
     <header className="sticky top-0 z-40 w-full bg-[#080b11]/90 backdrop-blur-xl border-b border-white/[0.07]">
@@ -100,12 +123,30 @@ export const Navigation: React.FC<NavigationProps> = ({
 
           <div className="h-3 w-px bg-white/10 hidden sm:block" />
 
-          {/* Live indicator & Clock */}
-          <div className="hidden sm:flex items-center gap-2 text-[11px] font-mono text-slate-400">
-            <span className="inline-flex items-center gap-1.5 text-emerald-400 bg-emerald-950/40 px-2 py-0.5 rounded border border-emerald-800/30">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-              LIVE TELEMETRY
+          {/* System State Awareness Pill */}
+          {onSystemStateChange ? (
+            <select
+              value={systemState}
+              onChange={(e) => onSystemStateChange(e.target.value as SystemRuntimeState)}
+              aria-label="System Runtime State"
+              className={`hidden sm:inline-flex items-center text-[10px] font-mono px-2 py-0.5 rounded border font-bold uppercase transition-all bg-black/40 focus:outline-none cursor-pointer ${stateBadge.color}`}
+            >
+              <option value="calm">Normal (Calm)</option>
+              <option value="investigating">AI Investigating</option>
+              <option value="risk_detected">Risk Detected</option>
+              <option value="mission_executing">Mission Executing</option>
+              <option value="major_decision">Major Decision</option>
+            </select>
+          ) : (
+            <span
+              className={`hidden sm:inline-flex items-center text-[10px] font-mono px-2 py-0.5 rounded border font-bold uppercase ${stateBadge.color}`}
+            >
+              {stateBadge.label}
             </span>
+          )}
+
+          {/* Live indicator & Clock */}
+          <div className="hidden lg:flex items-center gap-2 text-[11px] font-mono text-slate-400">
             <span className="text-slate-500">•</span>
             <span className="text-slate-300">{time || '00:00:00 UTC'}</span>
             <span className="text-slate-500">•</span>
@@ -134,21 +175,21 @@ export const Navigation: React.FC<NavigationProps> = ({
               onClick={() => onOperatingModeChange('executive')}
               className={`px-2.5 py-1 rounded-md transition-all ${
                 operatingMode === 'executive'
-                  ? 'bg-cyan-500/20 text-cyan-200 font-medium border border-cyan-500/30'
+                  ? 'bg-cyan-500/20 text-cyan-200 font-bold border border-cyan-500/30'
                   : 'text-slate-400 hover:text-slate-200'
               }`}
             >
               Executive
             </button>
             <button
-              onClick={() => onOperatingModeChange('deep_work')}
+              onClick={() => onOperatingModeChange('operate')}
               className={`px-2.5 py-1 rounded-md transition-all ${
-                operatingMode === 'deep_work' || operatingMode === 'deep-work'
-                  ? 'bg-cyan-500/20 text-cyan-200 font-medium border border-cyan-500/30'
+                operatingMode === 'operate' || operatingMode === 'deep_work' || operatingMode === 'deep-work'
+                  ? 'bg-cyan-500/20 text-cyan-200 font-bold border border-cyan-500/30'
                   : 'text-slate-400 hover:text-slate-200'
               }`}
             >
-              Deep Work
+              Operate
             </button>
           </div>
 
