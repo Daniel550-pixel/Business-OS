@@ -1,0 +1,18 @@
+import assert from 'node:assert/strict';
+import http from 'node:http'; import fs from 'node:fs'; import os from 'node:os'; import path from 'node:path';
+const temp=fs.mkdtempSync(path.join(os.tmpdir(),'business-os-security-v3-')); process.env.BUSINESS_OS_DATA_DIR=temp;
+const {evaluateSecurityRequest,getSecurityIntegrity,recordVerificationFailure}=await import('../server/security/securityKernel.ts');
+const {getSecurityEvents}=await import('../server/security/securityEvents.ts');
+const {createVaultProvenance,verifyVaultProvenance}=await import('../server/security/vaultProvenance.ts');
+const {executeSecurityResponse}=await import('../server/security/responseRuntime.ts');
+const {detectIncidents}=await import('../server/security/incidents.ts');
+const server=http.createServer((req,res)=>{let body='';req.on('data',c=>body+=c);req.on('end',()=>{const payload=JSON.parse(body||'{}');res.setHeader('content-type','application/json');res.end(JSON.stringify({verified:payload.operation==='security-response',details:'mock-response-verified'}));});});
+await new Promise<void>(resolve=>server.listen(0,'127.0.0.1',resolve)); const port=(server.address() as any).port as number; process.env.SECURITY_RESPONSE_WEBHOOK_URL='http://127.0.0.1:'+port;
+const policy=evaluateSecurityRequest({actionId:'security-isolate',title:'Isolate compromised resource',targetSystem:'Security Response Adapter',authorizedBy:'operator',parameters:{resource:'agent-1'},humanApproval:true,requiresApproval:true,riskLevel:'high',agentId:'security-agent',sessionId:'session-1',targetResource:'agent-1'});
+assert.equal(policy.allowed,true);
+const response=await executeSecurityResponse({action:'isolate',targetResource:'agent-1',authorizedBy:'operator',parameters:{reason:'verification failure'}}); assert.equal(response.verified,true);
+const manifest={manifestId:'manifest-1',objectId:'object-1',objectHash:'a'.repeat(64),chunkHashes:['b'.repeat(64),'c'.repeat(64)],encryptionScheme:'AES-256-GCM' as const,source:'OFFLINE_VAULT' as const,createdAt:new Date().toISOString()};
+const provenance=createVaultProvenance({manifest,authorizedBy:'operator'}); assert.equal(verifyVaultProvenance(provenance,manifest).valid,true); assert.equal(verifyVaultProvenance(provenance,{...manifest,objectHash:'d'.repeat(64)}).valid,false);
+recordVerificationFailure('action-v3','Vault','Simulated critical verification failure'); const incidents=detectIncidents(); assert.ok(incidents.some(i=>i.sourceEventIds.length>0));
+assert.equal(getSecurityIntegrity().valid,true); assert.ok(getSecurityEvents().some(e=>e.eventType==='SECURITY_RESPONSE_VERIFIED')); assert.ok(getSecurityEvents().some(e=>e.eventType==='VAULT_PROVENANCE_CREATED'));
+server.close(); console.log('security-v3: PASS');
