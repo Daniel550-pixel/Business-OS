@@ -1,25 +1,10 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
-  Activity,
-  Bot,
-  ChevronDown,
-  ChevronUp,
-  Crosshair,
-  Layers3,
-  Minus,
-  Pause,
-  Play,
-  Plus,
-  RotateCcw,
-  Scan,
-  ShieldCheck,
-  Sparkles,
-  Target,
-  Users,
-  WalletCards,
-  X,
-  Zap,
+  Activity, Bot, ChevronDown, Layers3, Minus, Pause, Play, Plus, RotateCcw,
+  Scan, ShieldCheck, Sparkles, Target, Users, WalletCards, X, Zap
 } from 'lucide-react';
+import * as THREE from 'three';
+import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { WorldNode, ProposedAction } from '../types';
 
 interface BusinessWorldProps {
@@ -31,319 +16,385 @@ interface BusinessWorldProps {
   onExecutePolicyAction?: (action: ProposedAction) => void;
 }
 
-type Camera = { yaw: number; pitch: number; zoom: number; x: number; y: number };
-type WorldEntity = {
-  id: string;
-  label: string;
-  type: WorldNode['type'];
-  metric: string;
-  subMetric: string;
-  status: WorldNode['status'];
-  x: number;
-  y: number;
-  z: number;
-  description: string;
-};
+type Entity3D = WorldNode & { position: [number, number, number] };
 
-const FALLBACK_ENTITIES: WorldEntity[] = [
-  { id: 'revenue', label: 'Revenue', type: 'revenue', metric: '$4.82M', subMetric: 'ARR', status: 'optimal', x: -34, y: 0, z: -18, description: 'Primary ARR generation and pricing intelligence.' },
-  { id: 'sales', label: 'Sales Pipeline', type: 'sales', metric: '$14.8M', subMetric: 'PIPELINE', status: 'active', x: 2, y: 0, z: -28, description: 'Enterprise pipeline, deal velocity and conversion.' },
-  { id: 'customers', label: 'Customers', type: 'customers', metric: '124%', subMetric: 'NRR', status: 'warning', x: 34, y: 0, z: -15, description: 'Retention, expansion and customer health.' },
-  { id: 'operations', label: 'Operations', type: 'operations', metric: '99.99%', subMetric: 'HEALTH', status: 'optimal', x: 34, y: 0, z: 19, description: 'Infrastructure, capacity and service reliability.' },
-  { id: 'finance', label: 'Finance', type: 'finance', metric: '$2.37M', subMetric: 'LIQUIDITY', status: 'optimal', x: -32, y: 0, z: 22, description: 'Treasury, cash position and capital allocation.' },
-  { id: 'core', label: 'Business Core', type: 'systems', metric: '42ms', subMetric: 'LATENCY', status: 'active', x: 0, y: 0, z: 5, description: 'Central orchestration, policy and decision runtime.' },
+const FALLBACK_ENTITIES: Entity3D[] = [
+  { id:'revenue', label:'Revenue', type:'revenue', metric:'$4.82M', subMetric:'ARR', status:'optimal', x:0, y:0, z:0, description:'Primary ARR generation and pricing intelligence.', connections:['core','customers'] },
+  { id:'sales', label:'Sales Pipeline', type:'sales', metric:'$14.8M', subMetric:'PIPELINE', status:'active', x:0, y:0, z:0, description:'Enterprise pipeline, deal velocity and conversion.', connections:['core','customers'] },
+  { id:'customers', label:'Customers', type:'customers', metric:'124%', subMetric:'NRR', status:'warning', x:0, y:0, z:0, description:'Retention, expansion and customer health.', connections:['sales','revenue'] },
+  { id:'operations', label:'Operations', type:'operations', metric:'99.99%', subMetric:'HEALTH', status:'optimal', x:0, y:0, z:0, description:'Infrastructure, capacity and service reliability.', connections:['core','finance'] },
+  { id:'finance', label:'Finance', type:'finance', metric:'$2.37M', subMetric:'LIQUIDITY', status:'optimal', x:0, y:0, z:0, description:'Treasury, cash position and capital allocation.', connections:['core','operations'] },
+  { id:'core', label:'Business Core', type:'systems', metric:'42ms', subMetric:'LATENCY', status:'active', x:0, y:0, z:0, description:'Central orchestration, policy and decision runtime.', connections:['revenue','sales','operations','finance'] },
 ];
+
+const POSITIONS: Record<string, [number, number, number]> = {
+  revenue: [-15, 2, -10], sales: [0, 2, -17], customers: [15, 2, -8],
+  operations: [15, 2, 10], finance: [-14, 2, 12], core: [0, 4, 2],
+};
 
 const AGENTS = [
-  { id: 'revenue-agent', name: 'Revenue Agent', from: 'revenue', to: 'core', color: 'cyan' },
-  { id: 'finance-agent', name: 'Finance Agent', from: 'finance', to: 'core', color: 'emerald' },
-  { id: 'customer-agent', name: 'Customer Agent', from: 'customers', to: 'sales', color: 'violet' },
-  { id: 'ops-agent', name: 'Ops Agent', from: 'operations', to: 'core', color: 'amber' },
+  { id:'revenue-agent', name:'Revenue Agent', from:'revenue', to:'core', color:0x63e6ff },
+  { id:'finance-agent', name:'Finance Agent', from:'finance', to:'core', color:0x63f5ae },
+  { id:'customer-agent', name:'Customer Agent', from:'customers', to:'sales', color:0xb98cff },
+  { id:'ops-agent', name:'Ops Agent', from:'operations', to:'core', color:0xffc85a },
 ];
 
-const statusClass: Record<string, string> = {
-  optimal: 'border-emerald-400/40 text-emerald-300',
-  active: 'border-cyan-400/40 text-cyan-300',
-  warning: 'border-amber-400/40 text-amber-300',
-  critical: 'border-rose-400/40 text-rose-300',
-};
+const statusColor = (status: WorldNode['status']) =>
+  status === 'critical' ? 0xff5574 : status === 'warning' ? 0xffc85a : status === 'active' ? 0x63e6ff : 0x63f5ae;
+
+function makeLabel(text: string, color = '#d9f7ff') {
+  const canvas = document.createElement('canvas');
+  canvas.width = 640; canvas.height = 128;
+  const ctx = canvas.getContext('2d')!;
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.font = '600 34px "Plus Jakarta Sans", Arial, sans-serif';
+  ctx.fillStyle = color;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(text.toUpperCase(), canvas.width / 2, 46);
+  ctx.font = '500 20px ui-monospace, monospace';
+  ctx.fillStyle = 'rgba(170,190,205,.8)';
+  ctx.fillText('BUSINESS ENTITY', canvas.width / 2, 91);
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.colorSpace = THREE.SRGBColorSpace;
+  const material = new THREE.SpriteMaterial({ map: texture, transparent: true, depthTest: false });
+  const sprite = new THREE.Sprite(material);
+  sprite.scale.set(5.8, 1.15, 1);
+  return sprite;
+}
+
+function makeNode(entity: Entity3D) {
+  const group = new THREE.Group();
+  group.name = entity.id;
+  const color = statusColor(entity.status);
+  const core = new THREE.Mesh(
+    new THREE.IcosahedronGeometry(entity.id === 'core' ? 1.9 : 1.45, 2),
+    new THREE.MeshStandardMaterial({ color:0x0b1722, emissive:color, emissiveIntensity:0.38, metalness:.72, roughness:.26 })
+  );
+  core.position.y = entity.id === 'core' ? 3.2 : 2.2;
+  core.userData.entityId = entity.id;
+  group.add(core);
+
+  const ring = new THREE.Mesh(
+    new THREE.TorusGeometry(entity.id === 'core' ? 2.65 : 2.05, .045, 8, 96),
+    new THREE.MeshBasicMaterial({ color, transparent:true, opacity:.72 })
+  );
+  ring.rotation.x = Math.PI / 2;
+  ring.position.copy(core.position);
+  ring.userData.entityId = entity.id;
+  group.add(ring);
+
+  const stem = new THREE.Mesh(
+    new THREE.CylinderGeometry(.035,.11,entity.id === 'core' ? 3.2 : 2.2,12),
+    new THREE.MeshBasicMaterial({ color, transparent:true, opacity:.65 })
+  );
+  stem.position.y = core.position.y / 2;
+  group.add(stem);
+
+  const label = makeLabel(entity.label, '#e8fbff');
+  label.position.set(0, core.position.y + 2.2, 0);
+  label.userData.entityId = entity.id;
+  group.add(label);
+
+  group.position.set(...entity.position);
+  group.userData.entityId = entity.id;
+  return group;
+}
+
+function makeEdge(a: THREE.Vector3, b: THREE.Vector3, color = 0x4bdcff) {
+  const geometry = new THREE.BufferGeometry().setFromPoints([a, b]);
+  const material = new THREE.LineBasicMaterial({ color, transparent:true, opacity:.34 });
+  return new THREE.Line(geometry, material);
+}
 
 export const BusinessWorld: React.FC<BusinessWorldProps> = ({
-  nodes = [],
-  selectedNode,
-  onSelectNode,
-  highlightedNodeIds = [],
-  onQuickInspectNode,
-  onExecutePolicyAction,
+  nodes = [], selectedNode, onSelectNode, highlightedNodeIds = [], onQuickInspectNode, onExecutePolicyAction,
 }) => {
-  const [camera, setCamera] = useState<Camera>({ yaw: -24, pitch: 56, zoom: 1, x: 0, y: 0 });
+  const mountRef = useRef<HTMLDivElement>(null);
+  const sceneRef = useRef<{ scene:THREE.Scene; camera:THREE.PerspectiveCamera; renderer:THREE.WebGLRenderer; controls:OrbitControls; groups:Map<string,THREE.Group>; agents:THREE.Mesh[]; clock:THREE.Clock } | null>(null);
   const [selectedId, setSelectedId] = useState(selectedNode?.id || 'core');
   const [playing, setPlaying] = useState(true);
   const [simulation, setSimulation] = useState(false);
   const [tick, setTick] = useState(0);
   const [showLegend, setShowLegend] = useState(true);
   const [showInspector, setShowInspector] = useState(true);
-  const drag = useRef<{ x: number; y: number; yaw: number; pitch: number; mode: 'orbit' | 'pan' } | null>(null);
 
-  const entities = useMemo<WorldEntity[]>(() => {
-    if (!nodes.length) return FALLBACK_ENTITIES;
-    const positions: Record<string, [number, number, number]> = {
-      revenue: [-34, 0, -18], sales: [2, 0, -28], customers: [34, 0, -15],
-      operations: [34, 0, 19], finance: [-32, 0, 22], core: [0, 0, 5],
-    };
-    return nodes.slice(0, 12).map((n, i) => {
-      const p = positions[n.id] || [((i % 4) - 1.5) * 24, 0, Math.floor(i / 4) * 24 - 10];
-      return {
-        id: n.id, label: n.label, type: n.type, metric: n.metric, subMetric: n.subMetric,
-        status: n.status, x: p[0], y: p[1], z: p[2], description: n.description,
-      };
-    });
+  const entities = useMemo<Entity3D[]>(() => {
+    const source = nodes.length ? nodes : FALLBACK_ENTITIES;
+    return source.slice(0, 12).map((n, i) => ({
+      ...n,
+      position: POSITIONS[n.id] || [((i % 4) - 1.5) * 9, 2, Math.floor(i / 4) * 10 - 8],
+    }));
   }, [nodes]);
 
   const active = entities.find(e => e.id === selectedId) || entities[0];
   const lookup = useMemo(() => new Map(entities.map(e => [e.id, e])), [entities]);
 
   useEffect(() => {
-    if (!playing) return;
-    const id = window.setInterval(() => setTick(t => t + 1), 80);
-    return () => window.clearInterval(id);
-  }, [playing]);
-
-  useEffect(() => {
     if (selectedNode?.id) setSelectedId(selectedNode.id);
   }, [selectedNode?.id]);
 
-  const select = (entity: WorldEntity) => {
-    setSelectedId(entity.id);
-    const source = nodes.find(n => n.id === entity.id);
-    if (source) onSelectNode?.(source);
-    onQuickInspectNode?.(entity.id);
+  useEffect(() => {
+    const mount = mountRef.current;
+    if (!mount) return;
+
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x02060f);
+    scene.fog = new THREE.FogExp2(0x02060f, 0.026);
+
+    const camera = new THREE.PerspectiveCamera(46, mount.clientWidth / Math.max(1,mount.clientHeight), .1, 250);
+    camera.position.set(28, 27, 34);
+
+    const renderer = new THREE.WebGLRenderer({ antialias:true, alpha:false, powerPreference:'high-performance' });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.setSize(mount.clientWidth, mount.clientHeight);
+    renderer.outputColorSpace = THREE.SRGBColorSpace;
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1.15;
+    mount.appendChild(renderer.domElement);
+
+    const controls = new OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+    controls.dampingFactor = .065;
+    controls.enablePan = true;
+    controls.minDistance = 15;
+    controls.maxDistance = 82;
+    controls.minPolarAngle = .34;
+    controls.maxPolarAngle = 1.48;
+    controls.target.set(0,2,0);
+
+    scene.add(new THREE.HemisphereLight(0x9adfff, 0x03060b, 1.7));
+    const key = new THREE.PointLight(0x58ddff, 180, 55);
+    key.position.set(0,18,0);
+    scene.add(key);
+    const fill = new THREE.PointLight(0x8d6dff, 95, 65);
+    fill.position.set(-28,10,-22);
+    scene.add(fill);
+
+    const floor = new THREE.Mesh(
+      new THREE.PlaneGeometry(90,90,1,1),
+      new THREE.MeshStandardMaterial({ color:0x040a12, metalness:.55, roughness:.74, transparent:true, opacity:.96 })
+    );
+    floor.rotation.x = -Math.PI/2;
+    floor.position.y = -0.2;
+    scene.add(floor);
+
+    const grid = new THREE.GridHelper(90,45,0x18485c,0x0a2733);
+    grid.position.y = -.12;
+    (grid.material as THREE.Material).transparent = true;
+    (grid.material as THREE.Material).opacity = .52;
+    scene.add(grid);
+
+    const platform = new THREE.Mesh(
+      new THREE.CylinderGeometry(23,26,.6,96),
+      new THREE.MeshStandardMaterial({ color:0x06111b, emissive:0x06212b, emissiveIntensity:.7, metalness:.85, roughness:.25 })
+    );
+    platform.position.y = .1;
+    scene.add(platform);
+
+    const groups = new Map<string,THREE.Group>();
+    entities.forEach(entity => {
+      const g = makeNode(entity);
+      groups.set(entity.id,g);
+      scene.add(g);
+    });
+
+    const edgePairs = [
+      ['core','revenue'],['core','finance'],['core','sales'],['core','operations'],
+      ['sales','customers'],['revenue','customers'],['finance','operations'],
+    ];
+    edgePairs.forEach(([a,b]) => {
+      const A=lookup.get(a), B=lookup.get(b);
+      if (!A || !B) return;
+      const line=makeEdge(new THREE.Vector3(...A.position).setY(2.8),new THREE.Vector3(...B.position).setY(2.8));
+      scene.add(line);
+    });
+
+    const agents: THREE.Mesh[] = [];
+    AGENTS.forEach(agent => {
+      const sphere = new THREE.Mesh(
+        new THREE.SphereGeometry(.34,20,20),
+        new THREE.MeshBasicMaterial({ color:agent.color })
+      );
+      sphere.userData.agent = agent;
+      scene.add(sphere);
+      agents.push(sphere);
+    });
+
+    const raycaster = new THREE.Raycaster();
+    const pointer = new THREE.Vector2();
+    const click = (event: MouseEvent) => {
+      const rect = renderer.domElement.getBoundingClientRect();
+      pointer.x=((event.clientX-rect.left)/rect.width)*2-1;
+      pointer.y=-((event.clientY-rect.top)/rect.height)*2+1;
+      raycaster.setFromCamera(pointer,camera);
+      const hits=raycaster.intersectObjects(Array.from(groups.values()),true);
+      const hit=hits.find(h=>h.object.userData.entityId);
+      if (!hit) return;
+      const id=hit.object.userData.entityId as string;
+      const entity=entities.find(e=>e.id===id);
+      if (!entity) return;
+      setSelectedId(id);
+      const source=nodes.find(n=>n.id===id);
+      if(source) onSelectNode?.(source);
+      onQuickInspectNode?.(id);
+    };
+    renderer.domElement.addEventListener('click',click);
+
+    const clock=new THREE.Clock();
+    sceneRef.current={scene,camera,renderer,controls,groups,agents,clock};
+
+    let raf=0;
+    const animate=()=>{
+      raf=requestAnimationFrame(animate);
+      const t=clock.getElapsedTime();
+      controls.update();
+      groups.forEach((g,id)=>{
+        const selected=id===selectedId;
+        g.scale.lerp(new THREE.Vector3(selected?1.16:1,selected?1.16:1,selected?1.16:1),.12);
+        const ring=g.children[1];
+        if(ring) ring.rotation.z=t*.35;
+        const core=g.children[0];
+        if(core) core.rotation.y=t*.18;
+      });
+      AGENTS.forEach((agent,i)=>{
+        const A=lookup.get(agent.from),B=lookup.get(agent.to),mesh=agents[i];
+        if(!A||!B) return;
+        const u=(t*(.09+i*.012))%1;
+        mesh.position.lerpVectors(new THREE.Vector3(...A.position).setY(3.4),new THREE.Vector3(...B.position).setY(3.4),u);
+      });
+      renderer.render(scene,camera);
+    };
+    animate();
+
+    const resize=()=>{
+      const w=mount.clientWidth,h=Math.max(1,mount.clientHeight);
+      camera.aspect=w/h; camera.updateProjectionMatrix(); renderer.setSize(w,h);
+    };
+    const ro=new ResizeObserver(resize);
+    ro.observe(mount);
+
+    return ()=>{
+      cancelAnimationFrame(raf);
+      ro.disconnect();
+      renderer.domElement.removeEventListener('click',click);
+      controls.dispose();
+      scene.traverse(o=>{
+        const m=o as THREE.Mesh;
+        if(m.geometry) m.geometry.dispose();
+        const mat=m.material as THREE.Material|THREE.Material[]|undefined;
+        if(Array.isArray(mat)) mat.forEach(x=>x.dispose());
+        else mat?.dispose();
+      });
+      renderer.dispose();
+      renderer.domElement.remove();
+      sceneRef.current=null;
+    };
+  }, [entities, lookup, nodes, onQuickInspectNode, onSelectNode]);
+
+  useEffect(()=>{
+    const world=sceneRef.current;
+    if(!world) return;
+    world.groups.forEach((group,id)=>{
+      const entity=entities.find(e=>e.id===id);
+      if(!entity) return;
+      const color=statusColor(entity.status);
+      const selected=id===selectedId;
+      const highlighted=highlightedNodeIds.includes(id);
+      const core=group.children[0] as THREE.Mesh;
+      const ring=group.children[1] as THREE.Mesh;
+      if(core.material instanceof THREE.MeshStandardMaterial){
+        core.material.emissive.setHex(selected?0x6ff3ff:highlighted?0x9a70ff:color);
+        core.material.emissiveIntensity=selected?1.0:highlighted?.72:.38;
+      }
+      if(ring.material instanceof THREE.MeshBasicMaterial){
+        ring.material.color.setHex(selected?0x8fffff:highlighted?0xa77cff:color);
+        ring.material.opacity=selected?.95:.58;
+      }
+    });
+  }, [selectedId,highlightedNodeIds,entities]);
+
+  const resetCamera=()=>sceneRef.current?.controls.reset();
+  const zoom=(delta:number)=>{
+    const c=sceneRef.current?.camera;
+    if(!c) return;
+    const direction=new THREE.Vector3().subVectors(c.position,sceneRef.current.controls.target).normalize();
+    c.position.addScaledVector(direction,delta);
   };
-
-  const resetCamera = () => setCamera({ yaw: -24, pitch: 56, zoom: 1, x: 0, y: 0 });
-
-  const policyAction = () => {
-    if (!active) return;
+  const policyAction=()=>{
+    if(!active) return;
     onExecutePolicyAction?.({
-      id: `world_${active.id}_${Date.now()}`,
-      title: `Optimize ${active.label} operating policy`,
-      description: `AI-proposed mutation for the ${active.label} domain.`,
-      riskLevel: 'medium',
-      targetSystem: active.label,
-      requiresApproval: true,
-      status: 'PROPOSED',
-      parameters: { simulation, worldEntity: active.id },
+      id:`world_${active.id}_${Date.now()}`,
+      title:`Optimize ${active.label} operating policy`,
+      description:`AI-proposed mutation for the ${active.label} domain.`,
+      riskLevel:'medium', targetSystem:active.label, requiresApproval:true, status:'PROPOSED',
+      parameters:{simulation,worldEntity:active.id},
     });
   };
 
-  const startDrag = (e: React.PointerEvent, mode: 'orbit' | 'pan') => {
-    e.currentTarget.setPointerCapture(e.pointerId);
-    drag.current = { x: e.clientX, y: e.clientY, yaw: camera.yaw, pitch: camera.pitch, mode };
-  };
-
-  const moveDrag = (e: React.PointerEvent) => {
-    if (!drag.current) return;
-    const dx = e.clientX - drag.current.x;
-    const dy = e.clientY - drag.current.y;
-    if (drag.current.mode === 'orbit') {
-      setCamera(c => ({ ...c, yaw: drag.current!.yaw + dx * 0.35, pitch: Math.max(28, Math.min(78, drag.current!.pitch - dy * 0.2)) }));
-    } else {
-      setCamera(c => ({ ...c, x: drag.current!.x + dx * 0.08, y: drag.current!.y - dy * 0.08 }));
-    }
-  };
-
-  const stopDrag = () => { drag.current = null; };
-
-  const edges = [
-    ['core', 'revenue'], ['core', 'finance'], ['core', 'sales'], ['core', 'operations'],
-    ['sales', 'customers'], ['revenue', 'customers'], ['finance', 'operations'],
-  ];
+  useEffect(()=>{
+    if(!playing) return;
+    const id=window.setInterval(()=>setTick(t=>t+1),80);
+    return()=>window.clearInterval(id);
+  },[playing]);
 
   return (
     <section className="relative w-full min-h-[720px] h-[calc(100vh-235px)] overflow-hidden rounded-[28px] border border-white/[0.09] bg-[#02060f] os-cyber-corners os-scanlines">
-      <video
-        className="absolute inset-0 h-full w-full object-cover opacity-[0.38] mix-blend-screen pointer-events-none select-none"
-        autoPlay muted loop playsInline preload="auto"
-        aria-hidden="true"
-        poster="https://d2ol7oe51mr4n9v9cf9b4n9.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/130837c4-0244-4f37-9c61-8d801d93fd29.jpg"
-        src="https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260912_104303_0c6d60b2-9353-408e-9449-585108a22fb5.mp4"
-      />
-      <div className="absolute inset-0 bg-[radial-gradient(70%_58%_at_50%_46%,rgba(2,6,15,0.12),rgba(2,6,15,0.52)_62%,rgba(2,6,15,0.82)_100%)] pointer-events-none" />
-      <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(2,6,15,0.78)_0%,rgba(2,6,15,0.18)_28%,rgba(2,6,15,0.28)_64%,rgba(2,6,15,0.86)_100%)] pointer-events-none" />
-      <div className="absolute left-1/2 top-1/2 h-72 w-72 -translate-x-1/2 -translate-y-1/2 rounded-full bg-cyan-300/[0.035] blur-3xl pointer-events-none" />
-      <div className="absolute inset-0 bg-[radial-gradient(60%_40%_at_50%_48%,transparent_0%,rgba(2,6,15,0.34)_100%)] pointer-events-none" />
+      <div className="absolute inset-0 z-0" ref={mountRef} aria-label="Interactive three-dimensional business world" />
+      <div className="absolute inset-0 z-[1] pointer-events-none bg-[radial-gradient(65%_60%_at_50%_46%,transparent_0%,rgba(2,6,15,.14)_48%,rgba(2,6,15,.72)_100%)]" />
+      <div className="absolute inset-0 z-[1] pointer-events-none bg-[linear-gradient(180deg,rgba(2,6,15,.78),rgba(2,6,15,.04)_26%,rgba(2,6,15,.22)_70%,rgba(2,6,15,.88))]" />
 
       <header className="absolute top-0 left-0 right-0 z-30 h-[68px] px-5 lg:px-7 flex items-center justify-between border-b border-white/[0.09] bg-[#02060f]/58 backdrop-blur-2xl">
         <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2 text-white font-semibold text-sm tracking-[0.18em]">
-            <Layers3 className="w-4 h-4 text-cyan-200" />
-            BUSINESS-OS
-          </div>
-          <span className="hidden sm:inline text-[9px] font-mono tracking-[0.16em] text-slate-400/80">SPATIAL INTELLIGENCE / DIGITAL TWIN</span>
-          <span className={`px-2 py-0.5 rounded border text-[9px] font-mono ${simulation ? 'border-violet-400/50 text-violet-300 bg-violet-500/10' : 'border-emerald-400/40 text-emerald-300 bg-emerald-500/10'}`}>
-            {simulation ? 'FUTURE SIMULATION' : 'LIVE TELEMETRY'}
-          </span>
+          <div className="flex items-center gap-2 text-white font-semibold text-sm tracking-[0.18em]"><Layers3 className="w-4 h-4 text-cyan-200"/>BUSINESS-OS</div>
+          <span className="hidden sm:inline text-[9px] font-mono tracking-[0.16em] text-slate-400/80">3D BUSINESS WORLD / DIGITAL TWIN</span>
+          <span className={`px-2 py-0.5 rounded border text-[9px] font-mono ${simulation?'border-violet-400/50 text-violet-300 bg-violet-500/10':'border-emerald-400/40 text-emerald-300 bg-emerald-500/10'}`}>{simulation?'FUTURE SIMULATION':'LIVE TELEMETRY'}</span>
         </div>
         <div className="flex items-center gap-1">
-          <button onClick={() => setPlaying(v => !v)} className="p-2 rounded-lg hover:bg-white/10 text-slate-300" title={playing ? 'Pause telemetry' : 'Resume telemetry'}>{playing ? <Pause size={15}/> : <Play size={15}/>}</button>
-          <button onClick={() => setSimulation(v => !v)} className={`px-2.5 py-1.5 rounded-lg border text-[10px] font-mono ${simulation ? 'border-violet-400/40 text-violet-300' : 'border-white/10 text-slate-400'}`}>SIM</button>
+          <button onClick={()=>setPlaying(v=>!v)} className="p-2 rounded-lg hover:bg-white/10 text-slate-300" title={playing?'Pause telemetry':'Resume telemetry'}>{playing?<Pause size={15}/>:<Play size={15}/>}</button>
+          <button onClick={()=>setSimulation(v=>!v)} className={`px-2.5 py-1.5 rounded-lg border text-[10px] font-mono ${simulation?'border-violet-400/40 text-violet-300':'border-white/10 text-slate-400'}`}>SIM</button>
           <button onClick={resetCamera} className="p-2 rounded-lg hover:bg-white/10 text-slate-300" title="Reset camera"><RotateCcw size={15}/></button>
         </div>
       </header>
 
-      <div
-        className="absolute inset-0 pt-14"
-        onPointerMove={moveDrag}
-        onPointerUp={stopDrag}
-        onPointerCancel={stopDrag}
-        onWheel={e => {
-          e.preventDefault();
-          setCamera(c => ({ ...c, zoom: Math.max(0.55, Math.min(1.65, c.zoom - e.deltaY * 0.001)) }));
-        }}
-        style={{ touchAction: 'none' }}
-      >
-        <div className="absolute inset-0 overflow-hidden [perspective:1100px]">
-          <div
-            className="absolute left-1/2 top-[52%] w-[1100px] h-[700px] transition-transform duration-100"
-            style={{
-              transformStyle: 'preserve-3d',
-              transform: `translate(-50%,-50%) translate3d(${camera.x * camera.zoom}px,${camera.y * camera.zoom}px,0) rotateX(${camera.pitch}deg) rotateZ(${camera.yaw}deg) scale(${camera.zoom})`,
-            }}
-            onPointerDown={e => startDrag(e, e.shiftKey ? 'pan' : 'orbit')}
-          >
-            <div
-              className="absolute inset-0 rounded-full opacity-70"
-              style={{
-                transform: 'rotateX(90deg) translateZ(-4px)',
-                backgroundImage: 'linear-gradient(rgba(0,240,255,.09) 1px,transparent 1px),linear-gradient(90deg,rgba(0,240,255,.09) 1px,transparent 1px)',
-                backgroundSize: '44px 44px',
-                boxShadow: '0 0 100px rgba(0,240,255,.05) inset',
-              }}
-            />
-
-            {edges.map(([a,b]) => {
-              const A = lookup.get(a), B = lookup.get(b);
-              if (!A || !B) return null;
-              const dx = B.x-A.x, dz = B.z-A.z;
-              const len = Math.sqrt(dx*dx+dz*dz);
-              const angle = Math.atan2(dz,dx) * 180 / Math.PI;
-              return (
-                <div key={`${a}-${b}`} className="absolute h-px origin-left bg-cyan-400/20 shadow-[0_0_12px_rgba(0,240,255,.35)]" style={{
-                  left: 550+A.x*7.5, top: 340+A.z*7.5, width: len*7.5,
-                  transform: `translateZ(2px) rotate(${angle}deg)`,
-                }}>
-                  <span className="absolute inset-y-0 left-0 w-1/3 bg-gradient-to-r from-transparent via-cyan-300/70 to-transparent animate-[pulse_1.8s_linear_infinite]" />
-                </div>
-              );
-            })}
-
-            {entities.map(entity => {
-              const selected = entity.id === selectedId;
-              const highlighted = highlightedNodeIds.includes(entity.id);
-              const isCore = entity.id === 'core';
-              return (
-                <button
-                  key={entity.id}
-                  onClick={e => { e.stopPropagation(); select(entity); }}
-                  className="absolute group text-left"
-                  style={{ left: 550+entity.x*7.5, top: 340+entity.z*7.5, transform: 'translate(-50%,-50%) translateZ(18px)' }}
-                >
-                  <div className={`relative w-36 h-24 rounded-xl border backdrop-blur-md transition-all duration-300 ${selected ? 'border-cyan-300 bg-cyan-500/10 shadow-[0_0_45px_rgba(0,240,255,.28)] scale-110' : highlighted ? 'border-violet-400/70 bg-violet-500/10' : 'border-white/10 bg-[#101722]/90 group-hover:border-cyan-400/50'}`}>
-                    <div className="absolute -bottom-3 left-3 right-3 h-3 rounded-[50%] bg-cyan-400/10 blur-md" />
-                    <div className="p-3 relative">
-                      <div className="flex items-center justify-between">
-                        <span className="text-[9px] font-mono uppercase text-slate-500">{entity.subMetric}</span>
-                        <span className={`w-1.5 h-1.5 rounded-full ${entity.status === 'critical' ? 'bg-rose-400' : entity.status === 'warning' ? 'bg-amber-400' : 'bg-emerald-400'} animate-pulse`} />
-                      </div>
-                      <div className="mt-1 flex items-center gap-2">
-                        {isCore ? <Zap size={15} className="text-cyan-300"/> : entity.type === 'customers' ? <Users size={15} className="text-violet-300"/> : entity.type === 'finance' ? <WalletCards size={15} className="text-emerald-300"/> : <Activity size={15} className="text-cyan-300"/>}
-                        <span className="text-xs font-semibold text-white">{entity.label}</span>
-                      </div>
-                      <div className="mt-2 text-base font-mono text-cyan-200">{simulation && entity.id === 'revenue' ? '$5.24M' : entity.metric}</div>
-                    </div>
-                    {selected && <div className="absolute -inset-2 rounded-2xl border border-cyan-300/20 animate-pulse pointer-events-none" />}
-                  </div>
-                </button>
-              );
-            })}
-
-            {AGENTS.map((agent, index) => {
-              const from = lookup.get(agent.from), to = lookup.get(agent.to);
-              if (!from || !to) return null;
-              const t = ((tick * (0.002 + index * 0.00035)) % 1);
-              const x = from.x + (to.x-from.x)*t;
-              const z = from.z + (to.z-from.z)*t;
-              return (
-                <div key={agent.id} className="absolute z-20 pointer-events-none" style={{ left: 550+x*7.5, top: 340+z*7.5, transform: 'translate(-50%,-50%) translateZ(45px)' }}>
-                  <div className="relative">
-                    <div className="absolute -inset-3 rounded-full bg-cyan-400/20 blur-md animate-pulse" />
-                    <div className="relative w-7 h-7 rounded-full border border-cyan-200/60 bg-[#0b1722] flex items-center justify-center shadow-[0_0_18px_rgba(0,240,255,.7)]"><Bot size={13} className="text-cyan-200"/></div>
-                    <div className="absolute left-9 top-1 whitespace-nowrap text-[8px] font-mono text-slate-400 bg-black/50 px-1.5 py-1 rounded">{agent.name}</div>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-
-        <div className="absolute left-5 bottom-5 z-20 flex flex-col gap-1">
-          <button onClick={() => setCamera(c => ({...c, zoom: Math.min(1.65,c.zoom+0.1)}))} className="p-2 rounded-lg border border-white/10 bg-[#0b1018]/90 text-slate-300 hover:text-white"><Plus size={15}/></button>
-          <button onClick={() => setCamera(c => ({...c, zoom: Math.max(.55,c.zoom-.1)}))} className="p-2 rounded-lg border border-white/10 bg-[#0b1018]/90 text-slate-300 hover:text-white"><Minus size={15}/></button>
-          <button onClick={() => setCamera(c => ({...c, yaw: c.yaw-15}))} className="p-2 rounded-lg border border-white/10 bg-[#0b1018]/90 text-slate-300 hover:text-white"><RotateCcw size={15}/></button>
-          <button onClick={() => setCamera(c => ({...c, yaw: c.yaw+15}))} className="p-2 rounded-lg border border-white/10 bg-[#0b1018]/90 text-slate-300 hover:text-white"><Scan size={15}/></button>
-        </div>
-
-        {showLegend && (
-          <div className="absolute left-[68px] bottom-5 z-20 p-3 rounded-xl border border-white/10 bg-[#050a12]/72 backdrop-blur-xl text-[9px] font-mono text-slate-400">
-            <div className="flex items-center gap-2"><Crosshair size={11} className="text-cyan-300"/> DRAG = ORBIT</div>
-            <div className="mt-1 text-slate-600">SHIFT + DRAG = PAN · WHEEL = ZOOM</div>
-            <div className="mt-2 flex items-center gap-3"><span className="text-emerald-300">● LIVE</span><span className="text-violet-300">● AI AGENT</span><span className="text-amber-300">● WARNING</span></div>
-          </div>
-        )}
-
-        <button onClick={() => setShowLegend(v => !v)} className="absolute right-5 bottom-5 z-20 px-2 py-1.5 rounded-lg border border-white/10 bg-[#0b1018]/90 text-[9px] font-mono text-slate-400">
-          {showLegend ? 'HIDE LEGEND' : 'SHOW LEGEND'}
-        </button>
-
-        {showInspector && active && (
-          <aside className="absolute right-4 top-20 z-25 w-72 max-h-[calc(100%-6rem)] overflow-y-auto rounded-2xl border border-white/10 bg-[#0b1018]/92 backdrop-blur-2xl shadow-2xl">
-            <div className="px-4 py-3 border-b border-white/10 flex items-center justify-between">
-              <div>
-                <div className="text-[9px] font-mono text-cyan-300">SPATIAL INSPECTOR</div>
-                <div className="text-sm font-semibold text-white mt-0.5">{active.label}</div>
-              </div>
-              <button onClick={() => setShowInspector(false)} className="text-slate-500 hover:text-white"><X size={15}/></button>
-            </div>
-            <div className="p-4 space-y-4">
-              <div className="grid grid-cols-2 gap-2">
-                <div className="p-2 rounded-lg bg-white/[0.03] border border-white/[0.06]"><div className="text-[8px] font-mono text-slate-500">PRIMARY</div><div className="mt-1 text-sm font-mono text-cyan-200">{active.metric}</div></div>
-                <div className="p-2 rounded-lg bg-white/[0.03] border border-white/[0.06]"><div className="text-[8px] font-mono text-slate-500">STATE</div><div className={`mt-1 text-[10px] uppercase font-mono ${statusClass[active.status] || 'text-slate-300'}`}>{active.status}</div></div>
-              </div>
-              <p className="text-[11px] leading-5 text-slate-400">{active.description}</p>
-              <div className="space-y-2">
-                <div className="flex items-center gap-2 text-[9px] font-mono text-slate-500"><Activity size={11}/> TELEMETRY <span className="ml-auto text-emerald-300">STREAMING</span></div>
-                <div className="h-10 flex items-end gap-1">{Array.from({length:18},(_,i)=><span key={i} className="flex-1 bg-cyan-400/30 rounded-t" style={{height: `${20 + ((i*17+tick)%55)}%`}} />)}</div>
-              </div>
-              <div className="flex gap-2">
-                <button onClick={() => onQuickInspectNode?.(active.id)} className="flex-1 px-3 py-2 rounded-lg border border-white/10 text-[9px] font-mono text-slate-300 hover:border-cyan-400/40">OPEN DOMAIN</button>
-                <button onClick={policyAction} className="flex-1 px-3 py-2 rounded-lg bg-cyan-400/10 border border-cyan-400/30 text-[9px] font-mono text-cyan-200 hover:bg-cyan-400/20 flex items-center justify-center gap-1"><ShieldCheck size={11}/> POLICY</button>
-              </div>
-            </div>
-          </aside>
-        )}
-
-        {!showInspector && active && (
-          <button onClick={() => setShowInspector(true)} className="absolute right-4 top-20 z-20 p-2 rounded-lg border border-white/10 bg-[#0b1018]/90 text-slate-300"><ChevronDown size={15}/></button>
-        )}
+      <div className="absolute left-5 bottom-5 z-20 flex flex-col gap-1">
+        <button onClick={()=>zoom(-4)} className="p-2 rounded-lg border border-white/10 bg-[#0b1018]/90 text-slate-300 hover:text-white"><Plus size={15}/></button>
+        <button onClick={()=>zoom(4)} className="p-2 rounded-lg border border-white/10 bg-[#0b1018]/90 text-slate-300 hover:text-white"><Minus size={15}/></button>
+        <button onClick={()=>{const c=sceneRef.current?.controls;if(c){c.getAzimuthalAngle();c.rotateLeft(.35);}}} className="p-2 rounded-lg border border-white/10 bg-[#0b1018]/90 text-slate-300 hover:text-white"><RotateCcw size={15}/></button>
+        <button onClick={()=>{const c=sceneRef.current?.controls;if(c)c.rotateLeft(-.35);}} className="p-2 rounded-lg border border-white/10 bg-[#0b1018]/90 text-slate-300 hover:text-white"><Scan size={15}/></button>
       </div>
 
-      <footer className="absolute bottom-0 left-0 right-0 z-30 h-10 px-4 flex items-center justify-between border-t border-white/[0.07] bg-[#090d15]/90 backdrop-blur-xl text-[9px] font-mono">
-        <div className="flex items-center gap-4 text-slate-500">
-          <span>ENTITIES <b className="text-slate-300">{entities.length}</b></span>
-          <span>AI AGENTS <b className="text-cyan-300">{AGENTS.length}</b></span>
-          <span>TELEMETRY <b className="text-emerald-300">LIVE</b></span>
-          {simulation && <span className="text-violet-300">SIMULATION DELTA: +8.7% ARR</span>}
+      {showLegend&&<div className="absolute left-[68px] bottom-5 z-20 p-3 rounded-xl border border-white/10 bg-[#050a12]/72 backdrop-blur-xl text-[9px] font-mono text-slate-400">
+        <div className="flex items-center gap-2"><Target size={11} className="text-cyan-300"/> LEFT DRAG = ORBIT</div>
+        <div className="mt-1 text-slate-600">RIGHT DRAG = PAN · WHEEL = ZOOM</div>
+        <div className="mt-2 flex items-center gap-3"><span className="text-emerald-300">● LIVE</span><span className="text-violet-300">● AI AGENT</span><span className="text-amber-300">● WARNING</span></div>
+      </div>}
+
+      <button onClick={()=>setShowLegend(v=>!v)} className="absolute right-5 bottom-5 z-20 px-2 py-1.5 rounded-lg border border-white/10 bg-[#0b1018]/90 text-[9px] font-mono text-slate-400">{showLegend?'HIDE LEGEND':'SHOW LEGEND'}</button>
+
+      {showInspector&&active&&<aside className="absolute right-4 top-20 z-25 w-72 max-h-[calc(100%-6rem)] overflow-y-auto rounded-2xl border border-white/10 bg-[#0b1018]/92 backdrop-blur-2xl shadow-2xl">
+        <div className="px-4 py-3 border-b border-white/10 flex items-center justify-between">
+          <div><div className="text-[9px] font-mono text-cyan-300">SPATIAL INSPECTOR</div><div className="text-sm font-semibold text-white mt-0.5">{active.label}</div></div>
+          <button onClick={()=>setShowInspector(false)} className="text-slate-500 hover:text-white"><X size={15}/></button>
         </div>
+        <div className="p-4 space-y-4">
+          <div className="grid grid-cols-2 gap-2">
+            <div className="p-2 rounded-lg bg-white/[0.03] border border-white/[0.06]"><div className="text-[8px] font-mono text-slate-500">PRIMARY</div><div className="mt-1 text-sm font-mono text-cyan-200">{simulation&&active.id==='revenue'?'$5.24M':active.metric}</div></div>
+            <div className="p-2 rounded-lg bg-white/[0.03] border border-white/[0.06]"><div className="text-[8px] font-mono text-slate-500">STATE</div><div className="mt-1 text-[10px] uppercase font-mono text-slate-300">{active.status}</div></div>
+          </div>
+          <p className="text-[11px] leading-5 text-slate-400">{active.description}</p>
+          <div className="space-y-2"><div className="flex items-center gap-2 text-[9px] font-mono text-slate-500"><Activity size={11}/> TELEMETRY <span className="ml-auto text-emerald-300">STREAMING</span></div><div className="h-10 flex items-end gap-1">{Array.from({length:18},(_,i)=><span key={i} className="flex-1 bg-cyan-400/30 rounded-t" style={{height:`${20+((i*17+tick)%55)}%`}}/>)}</div></div>
+          <div className="flex gap-2">
+            <button onClick={()=>onQuickInspectNode?.(active.id)} className="flex-1 px-3 py-2 rounded-lg border border-white/10 text-[9px] font-mono text-slate-300 hover:border-cyan-400/40">OPEN DOMAIN</button>
+            <button onClick={policyAction} className="flex-1 px-3 py-2 rounded-lg bg-cyan-400/10 border border-cyan-400/30 text-[9px] font-mono text-cyan-200 hover:bg-cyan-400/20 flex items-center justify-center gap-1"><ShieldCheck size={11}/> POLICY</button>
+          </div>
+        </div>
+      </aside>}
+
+      {!showInspector&&active&&<button onClick={()=>setShowInspector(true)} className="absolute right-4 top-20 z-20 p-2 rounded-lg border border-white/10 bg-[#0b1018]/90 text-slate-300"><ChevronDown size={15}/></button>}
+
+      <footer className="absolute bottom-0 left-0 right-0 z-30 h-10 px-4 flex items-center justify-between border-t border-white/[0.07] bg-[#090d15]/90 backdrop-blur-xl text-[9px] font-mono">
+        <div className="flex items-center gap-4 text-slate-500"><span>ENTITIES <b className="text-slate-300">{entities.length}</b></span><span>AI AGENTS <b className="text-cyan-300">{AGENTS.length}</b></span><span>RENDER <b className="text-emerald-300">WEBGL</b></span>{simulation&&<span className="text-violet-300">SIMULATION DELTA: +8.7% ARR</span>}</div>
         <div className="flex items-center gap-2 text-slate-500"><Target size={11}/> TICK {String(tick).padStart(6,'0')} <Sparkles size={11} className="text-cyan-300"/></div>
       </footer>
     </section>
