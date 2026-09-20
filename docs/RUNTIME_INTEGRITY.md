@@ -35,3 +35,5 @@ A 2xx response without `verified: true` is rejected.
 ## Data provenance
 
 The current Business OS visual dataset is simulated/mock data. UI surfaces must not label it as live external telemetry until a real connector is attached.
+
+CI verification cycle updated after typecheck fixes.
