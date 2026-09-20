@@ -237,15 +237,15 @@ export const MissionsView: React.FC<MissionsViewProps> = ({
   };
 
   return (
-    <div className="relative h-[calc(100vh-100px)] w-full overflow-hidden bg-[#07090e] border border-white/[0.08] rounded-2xl flex flex-col font-sans select-none">
+    <div className="relative h-[calc(100vh-100px)] w-full overflow-hidden os-glass-strong os-cyber-corners border border-white/[0.08] rounded-xl flex flex-col font-sans select-none">
       {/* Top Header Bar */}
-      <div className="h-14 border-b border-white/[0.08] bg-[#090d16]/90 px-5 flex items-center justify-between z-20 shrink-0 backdrop-blur-md">
+      <div className="h-14 border-b border-white/[0.08] os-glass px-5 flex items-center justify-between z-20 shrink-0 backdrop-blur-md">
         <div className="flex items-center gap-3">
-          <div className="w-2.5 h-2.5 rounded-full bg-cyan-400 animate-pulse" />
+          <div className="w-2.5 h-2.5 rounded-full bg-cyan-400 os-live-dot" />
           <div>
             <div className="flex items-center gap-2">
-              <h2 className="text-sm font-bold tracking-wider text-white uppercase font-mono">MISSIONS</h2>
-              <span className="text-[11px] text-slate-400 font-mono tracking-wide">
+              <h2 className="text-sm font-bold tracking-wider text-white uppercase os-mono">MISSIONS</h2>
+              <span className="text-[11px] text-slate-400 os-mono tracking-wide">
                 ACTIVE ENTERPRISE STRATEGY MISSIONS
               </span>
             </div>
@@ -256,7 +256,7 @@ export const MissionsView: React.FC<MissionsViewProps> = ({
           {/* Spatial Canvas / List Toggle */}
           <button
             onClick={() => setActiveTab(activeTab === 'spatial' ? 'list' : 'spatial')}
-            className="px-3 py-1.5 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] border border-white/10 text-xs font-mono text-slate-300 transition-colors flex items-center gap-2"
+            className="px-3 py-1.5 rounded-lg os-surface os-interactive text-xs os-mono text-slate-300 transition-colors flex items-center gap-2"
           >
             <Layers className="w-3.5 h-3.5 text-cyan-400" />
             <span>SPATIAL CANVAS</span>
@@ -265,7 +265,7 @@ export const MissionsView: React.FC<MissionsViewProps> = ({
           {/* New Mission / DOOMTELL Button */}
           <button
             onClick={() => setIsCreatingMission(true)}
-            className="px-3.5 py-1.5 rounded-lg bg-cyan-500/20 hover:bg-cyan-500/30 border border-cyan-400/40 text-xs font-mono font-bold text-cyan-300 transition-all flex items-center gap-2 shadow-[0_0_15px_rgba(6,182,212,0.2)]"
+            className="px-3.5 py-1.5 rounded-lg bg-cyan-500/20 hover:bg-cyan-500/30 border border-cyan-400/40 text-xs os-mono font-bold text-cyan-300 transition-all flex items-center gap-2 shadow-[0_0_15px_rgba(6,182,212,0.2)]"
           >
             <Sparkles className="w-3.5 h-3.5 text-cyan-300" />
             <span>+ MISSION / DOOMTELL</span>

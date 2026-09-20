@@ -50,27 +50,27 @@ export const ResearchView: React.FC = () => {
   return (
     <div className="space-y-6 animate-in fade-in duration-300">
       {/* Horizon Header */}
-      <div className="p-5 rounded-2xl bg-gradient-to-r from-[#0d141e] to-[#0d1a1e] border border-white/[0.08] shadow-[0_8px_32px_rgba(0,0,0,0.5)]">
+      <div className="p-4 lg:p-5 rounded-xl os-glass-strong os-cyber-corners border border-white/[0.08] shadow-[0_8px_32px_rgba(0,0,0,0.6)]">
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
           <div className="space-y-1">
             <div className="flex items-center gap-2">
-              <span className="text-[10px] font-mono tracking-widest text-teal-400 bg-teal-950/60 px-2 py-0.5 rounded border border-teal-800/40 uppercase">
+              <span className="text-[10px] os-mono tracking-widest text-teal-400 bg-teal-950/60 px-2 py-0.5 rounded border border-teal-800/50 uppercase">
                 RESEARCH & STRATEGIC INTELLIGENCE
               </span>
-              <span className="text-xs font-mono text-slate-400">• Autonomous Market Horizon Scan</span>
+              <span className="text-xs os-mono text-slate-400">• Autonomous Market Horizon Scan</span>
             </div>
-            <h2 className="text-2xl font-bold text-white">Market Radar, Competitive Moats & Sovereign Policy</h2>
+            <h2 className="text-2xl font-bold text-white os-mono">Market Radar, Competitive Moats & Sovereign Policy</h2>
             <p className="text-xs text-slate-300 max-w-xl">
               Continuous monitoring of competitor API pricing, sovereign data sovereignty directives, and AI cost optimization breakthroughs.
             </p>
           </div>
 
-          <div className="flex items-center gap-2 font-mono text-xs">
-            <div className="p-3 rounded-xl bg-black/40 border border-white/10 text-right">
+          <div className="flex items-center gap-2 os-mono text-xs">
+            <div className="p-3 rounded-lg os-surface text-right">
               <div className="text-[10px] text-slate-400 uppercase">Tracked Competitors</div>
               <div className="text-sm font-bold text-cyan-300">14 Active</div>
             </div>
-            <div className="p-3 rounded-xl bg-black/40 border border-white/10 text-right">
+            <div className="p-3 rounded-lg os-surface text-right">
               <div className="text-[10px] text-slate-400 uppercase">Synthesis Accuracy</div>
               <div className="text-sm font-bold text-emerald-400">94.8% Grounded</div>
             </div>
@@ -79,30 +79,31 @@ export const ResearchView: React.FC = () => {
       </div>
 
       {/* Research Briefs Matrix */}
-      <div className="p-5 rounded-2xl bg-[#0b0f19] border border-white/[0.08] space-y-4">
+      <div className="p-4 lg:p-5 rounded-xl os-glass space-y-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <BookOpen className="w-4 h-4 text-teal-400" />
-            <h3 className="text-xs font-bold text-white uppercase font-mono tracking-wider">
+            <h3 className="text-xs font-bold text-white uppercase os-mono tracking-wider">
               Autonomous Intelligence Briefs
             </h3>
           </div>
+          <span className="text-[11px] os-mono text-slate-400">Continuous radar scan</span>
         </div>
 
-        <div className="space-y-4">
+        <div className="space-y-3">
           {researchBriefs.map((brief) => (
             <div
               key={brief.id}
-              className="p-4 rounded-xl bg-black/40 border border-white/[0.06] hover:border-white/10 transition-all space-y-2.5"
+              className="p-4 rounded-lg os-surface os-interactive space-y-2.5"
             >
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                 <div className="flex items-center gap-2">
-                  <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-teal-500/10 text-teal-300 border border-teal-500/20 font-semibold">
+                  <span className="text-[10px] os-mono px-2 py-0.5 rounded bg-teal-500/10 text-teal-300 border border-teal-500/30 font-semibold">
                     {brief.domain}
                   </span>
-                  <span className="text-xs font-mono text-slate-500">{brief.date}</span>
+                  <span className="text-xs os-mono text-slate-400">{brief.date}</span>
                 </div>
-                <div className="text-[11px] font-mono text-slate-400">
+                <div className="text-[11px] os-mono text-slate-400">
                   Confidence: <span className="text-cyan-300 font-bold">{brief.confidence}%</span>
                 </div>
               </div>
@@ -114,7 +115,7 @@ export const ResearchView: React.FC = () => {
                 {brief.tags.map((t, idx) => (
                   <span
                     key={idx}
-                    className="text-[10px] font-mono px-2 py-0.5 rounded bg-white/[0.04] text-slate-300 border border-white/[0.06]"
+                    className="text-[10px] os-mono px-2 py-0.5 rounded bg-white/[0.04] text-slate-300 border border-white/[0.08]"
                   >
                     #{t}
                   </span>

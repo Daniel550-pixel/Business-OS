@@ -120,27 +120,27 @@ export const SalesView: React.FC<SalesViewProps> = ({ onExecuteAction }) => {
   return (
     <div className="space-y-6 animate-in fade-in duration-300">
       {/* Sales Horizon Header */}
-      <div className="p-5 rounded-2xl bg-gradient-to-r from-[#0b101c] to-[#121c2e] border border-white/[0.08] shadow-[0_8px_32px_rgba(0,0,0,0.5)]">
+      <div className="p-4 lg:p-5 rounded-xl os-glass-strong os-cyber-corners border border-white/[0.08] shadow-[0_8px_32px_rgba(0,0,0,0.6)]">
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
           <div className="space-y-1">
             <div className="flex items-center gap-2">
-              <span className="text-[10px] font-mono tracking-widest text-cyan-400 bg-cyan-950/60 px-2 py-0.5 rounded border border-cyan-800/40 uppercase">
+              <span className="text-[10px] os-mono tracking-widest text-cyan-400 bg-cyan-950/60 px-2 py-0.5 rounded border border-cyan-800/50 uppercase">
                 SALES & PIPELINE INTELLIGENCE
               </span>
-              <span className="text-xs font-mono text-slate-400">• Win Rate: 34.8%</span>
+              <span className="text-xs os-mono text-slate-400">• Win Rate: 34.8%</span>
             </div>
-            <h2 className="text-2xl font-bold text-white">$14.2M Weighted Active Enterprise Pipeline</h2>
+            <h2 className="text-2xl font-bold text-white os-mono">$14.2M Weighted Active Enterprise Pipeline</h2>
             <p className="text-xs text-slate-300 max-w-xl">
               42 qualified active enterprise opportunities. Current average sales velocity: 68 days. 2 high-value deals in Procurement require executive sponsor touchpoints.
             </p>
           </div>
 
-          <div className="flex items-center gap-2 font-mono text-xs">
-            <div className="p-3 rounded-xl bg-black/40 border border-white/10 text-right">
+          <div className="flex items-center gap-2 os-mono text-xs">
+            <div className="p-3 rounded-lg os-surface text-right">
               <div className="text-[10px] text-slate-400 uppercase">Q3 Quota Coverage</div>
               <div className="text-sm font-bold text-emerald-400">3.4x Target</div>
             </div>
-            <div className="p-3 rounded-xl bg-black/40 border border-white/10 text-right">
+            <div className="p-3 rounded-lg os-surface text-right">
               <div className="text-[10px] text-slate-400 uppercase">Procurement Cycle</div>
               <div className="text-sm font-bold text-rose-400">+14 Days Lag</div>
             </div>
@@ -158,41 +158,41 @@ export const SalesView: React.FC<SalesViewProps> = ({ onExecuteAction }) => {
         ].map((st, idx) => (
           <div
             key={idx}
-            className={`p-3.5 rounded-xl border ${
+            className={`p-3.5 rounded-lg os-surface os-interactive ${
               st.alert
-                ? 'bg-amber-950/20 border-amber-500/30'
+                ? 'border-amber-500/40 bg-amber-950/20'
                 : st.highlight
-                ? 'bg-cyan-950/20 border-cyan-500/30'
-                : 'bg-[#0b0f19] border-white/[0.08]'
+                ? 'border-cyan-500/40 bg-cyan-950/20'
+                : ''
             }`}
           >
-            <div className="text-[10px] font-mono text-slate-400 uppercase">{st.stage}</div>
-            <div className="text-lg font-bold font-mono text-white mt-0.5">{st.value}</div>
-            <div className="text-[10px] font-mono text-slate-400">{st.count}</div>
+            <div className="text-[10px] os-mono text-slate-400 uppercase">{st.stage}</div>
+            <div className="text-lg font-bold os-mono text-white mt-0.5">{st.value}</div>
+            <div className="text-[10px] os-mono text-slate-400">{st.count}</div>
           </div>
         ))}
       </div>
 
       {/* Enterprise Deals Ledger */}
-      <div className="p-5 rounded-2xl bg-[#0b0f19] border border-white/[0.08] space-y-4">
+      <div className="p-4 lg:p-5 rounded-xl os-glass space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div className="flex items-center gap-2">
             <Building className="w-4 h-4 text-cyan-400" />
-            <h3 className="text-xs font-bold text-white uppercase font-mono tracking-wider">
+            <h3 className="text-xs font-bold text-white uppercase os-mono tracking-wider">
               Priority Enterprise Deals Under Active Observation
             </h3>
           </div>
 
           {/* Filter Pills */}
-          <div className="flex items-center gap-1 font-mono text-xs">
+          <div className="flex items-center gap-1.5 os-mono text-xs">
             {['all', 'Discovery', 'Evaluation', 'Legal/Procurement', 'Closing'].map((st) => (
               <button
                 key={st}
                 onClick={() => setStageFilter(st)}
-                className={`px-2.5 py-1 rounded text-[11px] transition-all ${
+                className={`px-2.5 py-1 rounded-md text-[11px] transition-all ${
                   stageFilter === st
-                    ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/30'
-                    : 'text-slate-400 hover:text-white'
+                    ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 font-semibold'
+                    : 'text-slate-400 hover:text-white bg-black/30 border border-white/[0.06]'
                 }`}
               >
                 {st}
@@ -205,10 +205,10 @@ export const SalesView: React.FC<SalesViewProps> = ({ onExecuteAction }) => {
           {filteredDeals.map((deal) => (
             <div
               key={deal.id}
-              className={`p-4 rounded-xl border transition-all space-y-3 ${
+              className={`p-4 rounded-lg os-surface os-interactive space-y-3 ${
                 deal.health === 'at_risk'
-                  ? 'bg-rose-950/10 border-rose-500/30'
-                  : 'bg-black/40 border-white/[0.06] hover:border-white/10'
+                  ? 'border-rose-500/40 bg-rose-950/15'
+                  : ''
               }`}
             >
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
@@ -216,23 +216,23 @@ export const SalesView: React.FC<SalesViewProps> = ({ onExecuteAction }) => {
                   <div className="flex items-center gap-2">
                     <span className="text-sm font-bold text-white">{deal.company}</span>
                     <span
-                      className={`text-[9px] font-mono px-1.5 py-0.2 rounded font-bold uppercase ${
+                      className={`text-[9px] os-mono px-1.5 py-0.2 rounded font-bold uppercase ${
                         deal.health === 'at_risk'
-                          ? 'bg-rose-500/20 text-rose-300 border border-rose-500/30'
-                          : 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
+                          ? 'bg-rose-500/20 text-rose-300 border border-rose-500/40'
+                          : 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40'
                       }`}
                     >
                       {deal.health.replace('_', ' ')}
                     </span>
-                    <span className="text-xs font-mono font-bold text-cyan-300">{deal.dealSize}</span>
+                    <span className="text-xs os-mono font-bold text-cyan-300">{deal.dealSize}</span>
                   </div>
-                  <div className="text-[11px] font-mono text-slate-400">
+                  <div className="text-[11px] os-mono text-slate-400">
                     Lead Contact: <strong className="text-slate-200">{deal.contact}</strong> • Stage: {deal.stage} • Last Touch: {deal.lastTouch}
                   </div>
                 </div>
 
                 <div className="flex items-center gap-3 shrink-0">
-                  <div className="text-right font-mono text-xs">
+                  <div className="text-right os-mono text-xs">
                     <div className="text-emerald-400 font-bold">{deal.winProb}%</div>
                     <div className="text-[10px] text-slate-500">Win Prob</div>
                   </div>
@@ -240,7 +240,7 @@ export const SalesView: React.FC<SalesViewProps> = ({ onExecuteAction }) => {
                   {deal.riskReason && (
                     <button
                       onClick={() => handleRunMitigation(deal)}
-                      className="px-3 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-500 text-white text-xs font-semibold flex items-center gap-1.5 transition-all shadow-[0_0_12px_rgba(244,63,94,0.3)] font-mono"
+                      className="px-3 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-500 text-white text-xs font-semibold flex items-center gap-1.5 transition-all shadow-[0_0_12px_rgba(244,63,94,0.3)] os-mono"
                     >
                       <ShieldCheck className="w-3.5 h-3.5" />
                       <span>Mitigate Bottleneck</span>
@@ -250,7 +250,7 @@ export const SalesView: React.FC<SalesViewProps> = ({ onExecuteAction }) => {
               </div>
 
               {deal.riskReason && (
-                <div className="p-3 rounded-lg bg-black/40 border border-rose-500/20 text-xs font-mono text-rose-200 space-y-1">
+                <div className="p-3 rounded-lg bg-black/60 border border-rose-500/30 text-xs os-mono text-rose-200 space-y-1">
                   <div className="flex items-center gap-1.5 font-bold text-rose-400">
                     <AlertTriangle className="w-3.5 h-3.5" />
                     <span>Bottleneck Detected by Sales Agent:</span>

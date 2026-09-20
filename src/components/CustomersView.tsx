@@ -115,27 +115,27 @@ export const CustomersView: React.FC<CustomersViewProps> = ({ onExecuteAction })
   return (
     <div className="space-y-6 animate-in fade-in duration-300">
       {/* Customers Horizon Header */}
-      <div className="p-5 rounded-2xl bg-gradient-to-r from-[#0b101c] to-[#12142a] border border-white/[0.08] shadow-[0_8px_32px_rgba(0,0,0,0.5)]">
+      <div className="p-4 lg:p-5 rounded-xl os-glass-strong os-cyber-corners border border-white/[0.08] shadow-[0_8px_32px_rgba(0,0,0,0.6)]">
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
           <div className="space-y-1">
             <div className="flex items-center gap-2">
-              <span className="text-[10px] font-mono tracking-widest text-indigo-400 bg-indigo-950/60 px-2 py-0.5 rounded border border-indigo-800/40 uppercase">
+              <span className="text-[10px] os-mono tracking-widest text-indigo-400 bg-indigo-950/60 px-2 py-0.5 rounded border border-indigo-800/50 uppercase">
                 CUSTOMER RETENTION & EXPANSION
               </span>
-              <span className="text-xs font-mono text-slate-400">• Net Retention Rate: 118.2%</span>
+              <span className="text-xs os-mono text-slate-400">• Net Retention Rate: 118.2%</span>
             </div>
-            <h2 className="text-2xl font-bold text-white">1,428 Active Organizations · 88 Enterprise Tier</h2>
+            <h2 className="text-2xl font-bold text-white os-mono">1,428 Active Organizations · 88 Enterprise Tier</h2>
             <p className="text-xs text-slate-300 max-w-xl">
               Average account health score is 87/100. 1 enterprise account (Global Freight Networks) shows severe seat contraction risk requiring immediate retention intervention.
             </p>
           </div>
 
-          <div className="flex items-center gap-2 font-mono text-xs">
-            <div className="p-3 rounded-xl bg-black/40 border border-white/10 text-right">
+          <div className="flex items-center gap-2 os-mono text-xs">
+            <div className="p-3 rounded-lg os-surface text-right">
               <div className="text-[10px] text-slate-400 uppercase">Gross Logo Churn</div>
               <div className="text-sm font-bold text-emerald-400">0.42%/mo (Benchmark)</div>
             </div>
-            <div className="p-3 rounded-xl bg-black/40 border border-white/10 text-right">
+            <div className="p-3 rounded-lg os-surface text-right">
               <div className="text-[10px] text-slate-400 uppercase">Expansion Pipeline</div>
               <div className="text-sm font-bold text-cyan-300">+$1.8M ARR Potential</div>
             </div>
@@ -144,11 +144,11 @@ export const CustomersView: React.FC<CustomersViewProps> = ({ onExecuteAction })
       </div>
 
       {/* Account Directory & Anomaly Interceptor */}
-      <div className="p-5 rounded-2xl bg-[#0b0f19] border border-white/[0.08] space-y-4">
+      <div className="p-4 lg:p-5 rounded-xl os-glass space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div className="flex items-center gap-2">
             <Users className="w-4 h-4 text-indigo-400" />
-            <h3 className="text-xs font-bold text-white uppercase font-mono tracking-wider">
+            <h3 className="text-xs font-bold text-white uppercase os-mono tracking-wider">
               Account Health Telemetry & Churn Interceptor
             </h3>
           </div>
@@ -161,20 +161,20 @@ export const CustomersView: React.FC<CustomersViewProps> = ({ onExecuteAction })
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Search accounts..."
-                className="pl-7 pr-3 py-1 rounded-lg bg-black/40 border border-white/10 text-xs text-white placeholder:text-slate-500 focus:outline-none focus:border-indigo-500 font-mono"
+                className="pl-7 pr-3 py-1 rounded-lg bg-black/50 border border-white/10 text-xs text-white placeholder:text-slate-500 focus:outline-none focus:border-indigo-500 os-mono"
               />
               <Search className="w-3.5 h-3.5 text-slate-500 absolute left-2 top-2" />
             </div>
 
-            <div className="flex items-center gap-1 font-mono text-xs">
+            <div className="flex items-center gap-1.5 os-mono text-xs">
               {['all', 'Enterprise', 'Mid-Market'].map((tier) => (
                 <button
                   key={tier}
                   onClick={() => setTierFilter(tier)}
-                  className={`px-2.5 py-1 rounded text-[11px] transition-all ${
+                  className={`px-2.5 py-1 rounded-md text-[11px] transition-all ${
                     tierFilter === tier
-                      ? 'bg-indigo-500/20 text-indigo-300 border border-indigo-500/30'
-                      : 'text-slate-400 hover:text-white'
+                      ? 'bg-indigo-500/20 text-indigo-300 border border-indigo-500/40 font-semibold'
+                      : 'text-slate-400 hover:text-white bg-black/30 border border-white/[0.06]'
                   }`}
                 >
                   {tier}
@@ -188,28 +188,28 @@ export const CustomersView: React.FC<CustomersViewProps> = ({ onExecuteAction })
           {filteredAccounts.map((acc) => (
             <div
               key={acc.id}
-              className={`p-4 rounded-xl border transition-all space-y-3 ${
+              className={`p-4 rounded-lg os-surface os-interactive space-y-3 ${
                 acc.healthScore < 60
-                  ? 'bg-rose-950/15 border-rose-500/30'
-                  : 'bg-black/40 border-white/[0.06] hover:border-white/10'
+                  ? 'border-rose-500/40 bg-rose-950/15'
+                  : ''
               }`}
             >
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                 <div className="space-y-0.5">
                   <div className="flex items-center gap-2">
                     <span className="text-sm font-bold text-white">{acc.name}</span>
-                    <span className="text-[10px] font-mono px-2 py-0.2 rounded bg-white/[0.05] text-slate-300 border border-white/10">
+                    <span className="text-[10px] os-mono px-2 py-0.2 rounded bg-white/[0.05] text-slate-300 border border-white/10">
                       {acc.tier}
                     </span>
-                    <span className="text-xs font-mono font-bold text-cyan-300">{acc.arr} ARR</span>
+                    <span className="text-xs os-mono font-bold text-cyan-300">{acc.arr} ARR</span>
                   </div>
-                  <div className="text-[11px] font-mono text-slate-400">
+                  <div className="text-[11px] os-mono text-slate-400">
                     Seats: <strong className="text-slate-200">{acc.seats}</strong> ({acc.seatDelta}) • NRR: {acc.nrr} • Active: {acc.lastActive}
                   </div>
                 </div>
 
                 <div className="flex items-center gap-3 shrink-0">
-                  <div className="text-right font-mono text-xs">
+                  <div className="text-right os-mono text-xs">
                     <div
                       className={`font-bold ${
                         acc.healthScore < 60
@@ -227,7 +227,7 @@ export const CustomersView: React.FC<CustomersViewProps> = ({ onExecuteAction })
                   {acc.actionProposal && (
                     <button
                       onClick={() => handleIntervene(acc)}
-                      className="px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold flex items-center gap-1.5 transition-all shadow-[0_0_12px_rgba(99,102,241,0.3)] font-mono"
+                      className="px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold flex items-center gap-1.5 transition-all shadow-[0_0_12px_rgba(99,102,241,0.3)] os-mono"
                     >
                       <ShieldCheck className="w-3.5 h-3.5" />
                       <span>Execute Retention Protocol</span>
@@ -237,7 +237,7 @@ export const CustomersView: React.FC<CustomersViewProps> = ({ onExecuteAction })
               </div>
 
               {acc.anomaly && (
-                <div className="p-3 rounded-lg bg-black/40 border border-rose-500/20 text-xs font-mono text-rose-200 space-y-1">
+                <div className="p-3 rounded-lg bg-black/60 border border-rose-500/30 text-xs os-mono text-rose-200 space-y-1">
                   <div className="flex items-center gap-1.5 font-bold text-rose-400">
                     <AlertTriangle className="w-3.5 h-3.5" />
                     <span>Customer Risk Detected:</span>
