@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Navigation } from './components/Navigation';
 import { CommandCenter } from './components/CommandCenter';
 import { BusinessWorld } from './components/BusinessWorld';
@@ -61,6 +61,52 @@ import {
 } from './types';
 
 export default function App() {
+  useEffect(() => {
+    const a = document.getElementById('businessOsBgA') as HTMLVideoElement | null;
+    const b = document.getElementById('businessOsBgB') as HTMLVideoElement | null;
+    if (!a || !b) return;
+
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      a.removeAttribute('autoplay');
+      a.pause(); b.pause();
+      try { a.currentTime = 0; } catch {}
+      return;
+    }
+
+    const FADE = 0.9;
+    let cur = a;
+    let nxt = b;
+    let swapping = false;
+    const play = (v: HTMLVideoElement) => {
+      const p = v.play();
+      if (p) p.catch(() => {});
+    };
+    const tick = () => {
+      if (swapping || !cur.duration) return;
+      if (cur.duration - cur.currentTime > FADE) return;
+      swapping = true;
+      const out = cur;
+      try { nxt.currentTime = 0; } catch {}
+      play(nxt);
+      nxt.classList.add('is-active');
+      out.classList.remove('is-active');
+      [cur, nxt] = [nxt, cur];
+      window.setTimeout(() => {
+        out.pause();
+        try { out.currentTime = 0; } catch {}
+        swapping = false;
+      }, FADE * 1000 + 100);
+    };
+
+    a.addEventListener('timeupdate', tick);
+    b.addEventListener('timeupdate', tick);
+    play(a);
+    return () => {
+      a.removeEventListener('timeupdate', tick);
+      b.removeEventListener('timeupdate', tick);
+    };
+  }, []);
+
   const [activeView, setActiveView] = useState<ViewMode>('command-center');
   const [operatingMode, setOperatingMode] = useState<OperatingMode>('operate');
   const [systemState, setSystemState] = useState<SystemRuntimeState>('risk_detected');
@@ -260,7 +306,16 @@ export default function App() {
   };
 
   return (
-    <div className={`min-h-screen bg-[#07090e] text-slate-100 flex flex-col selection:bg-cyan-500/30 selection:text-cyan-200 transition-all duration-300 ${getContainerStateClass()}`}>
+    <div className={`business-os-shell min-h-screen text-slate-100 flex flex-col selection:bg-cyan-500/30 selection:text-cyan-200 transition-all duration-300 ${getContainerStateClass()}`}>
+      <div className="business-os-cinematic-bg" aria-hidden="true">
+        <video id="businessOsBgA" className="business-os-bg-video is-active" autoPlay muted loop playsInline preload="auto" disablePictureInPicture poster="https://d2ol7oe51mr4n9cf9b4n9.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/82e7eb75-c65f-490a-99b5-f3d1cad54200.webp">
+          <source src="https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260912_104036_bd6924f6-3c8e-417e-8465-6d03c8c2e9e6.mp4" type="video/mp4" />
+        </video>
+        <video id="businessOsBgB" className="business-os-bg-video" muted loop playsInline preload="auto" disablePictureInPicture poster="https://d2ol7oe51mr4n9cf9b4n9.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/82e7eb75-c65f-490a-99b5-f3d1cad54200.webp">
+          <source src="https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260912_104036_bd6924f6-3c8e-417e-8465-6d03c8c2e9e6.mp4" type="video/mp4" />
+        </video>
+        <div className="business-os-cinematic-veil" />
+      </div>
       {/* Telemetry Header & View Switcher */}
       <Navigation
         activeView={activeView}
