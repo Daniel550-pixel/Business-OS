@@ -309,6 +309,35 @@ User Request: ${prompt}`,
   res.json({ success: true, source: 'offline-intelligence-core', data: result });
 });
 
+function evaluatePolicyGate(input: {
+  actionId: unknown;
+  title: unknown;
+  targetSystem: unknown;
+  authorizedBy: unknown;
+  parameters: unknown;
+  humanApproval: unknown;
+  requiresApproval: unknown;
+  riskLevel: unknown;
+}) {
+  const allowedRisk = new Set(['low', 'medium', 'high']);
+  if (typeof input.actionId !== 'string' || typeof input.title !== 'string' || typeof input.targetSystem !== 'string') {
+    return 'Action identity is incomplete.';
+  }
+  if (!allowedRisk.has(String(input.riskLevel))) return 'Unsupported risk level.';
+  if (input.requiresApproval !== true || input.humanApproval !== true) return 'Explicit human approval is required.';
+  if (!input.parameters || typeof input.parameters !== 'object' || Array.isArray(input.parameters)) {
+    return 'Action parameters must be a JSON object.';
+  }
+  const allowedTargets = (process.env.EXECUTION_ALLOWED_TARGETS || '')
+    .split(',')
+    .map((target) => target.trim())
+    .filter(Boolean);
+  if (allowedTargets.length > 0 && !allowedTargets.includes(input.targetSystem)) {
+    return `Target system "${input.targetSystem}" is not allowlisted by Policy Gate.`;
+  }
+  return null;
+}
+
 // Durable execution runtime. AI proposals never execute directly; an approved action must
 // pass the Policy Gate and a configured adapter must verify the external mutation.
 app.get('/api/actions/executions', (_req, res) => {
@@ -316,9 +345,10 @@ app.get('/api/actions/executions', (_req, res) => {
 });
 
 app.post('/api/actions/execute', async (req, res) => {
-  const { actionId, title, targetSystem, authorizedBy, parameters, humanApproval, idempotencyKey } = req.body ?? {};
-  if (!actionId || !title || !targetSystem || !authorizedBy || humanApproval !== true) {
-    return res.status(400).json({ success: false, error: 'Policy Gate requires a complete action and explicit human approval.' });
+  const { actionId, title, targetSystem, authorizedBy, parameters, humanApproval, idempotencyKey, requiresApproval, riskLevel } = req.body ?? {};
+  const policyError = evaluatePolicyGate({ actionId, title, targetSystem, authorizedBy, parameters, humanApproval, requiresApproval, riskLevel });
+  if (policyError) {
+    return res.status(403).json({ success: false, error: `Policy Gate denied the action: ${policyError}` });
   }
   if (!idempotencyKey || typeof idempotencyKey !== 'string') {
     return res.status(400).json({ success: false, error: 'An idempotency key is required for execution.' });
