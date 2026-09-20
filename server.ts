@@ -7,7 +7,8 @@ import { evaluateSecurityRequest, getSecurityIntegrity, getSecurityStatus, recor
 import { getSecurityEvents, appendSecurityEvent } from './server/security/securityEvents.js';
 import { detectIncidents, listIncidents, updateIncident } from './server/security/incidents.js';
 import { createProvenanceRecord, verifyProvenanceRecord } from './server/security/provenance.js';
-import { getSecurityEvents } from './server/security/securityEvents.js';
+import { createVaultProvenance, verifyVaultProvenance } from './server/security/vaultProvenance.js';
+import { executeSecurityResponse, executeRollbackResponse } from './server/security/responseRuntime.js';
 
 dotenv.config();
 
@@ -443,17 +444,40 @@ app.post('/api/security/incidents/:incidentId/transition',(req,res)=>{
  if(!['ACKNOWLEDGED','CONTAINED','RESOLVED'].includes(status)||typeof authorizedBy!=='string'||!authorizedBy.trim())return res.status(400).json({success:false,error:'Valid status and authorizedBy required.'});
  try{return res.json({success:true,incident:updateIncident(req.params.incidentId,status,authorizedBy)});}catch(error:any){return res.status(403).json({success:false,error:error?.message||'Incident transition denied.'});}
 });
-app.post('/api/security/operator-action',(req,res)=>{
- const {action,targetResource,authorizedBy,humanApproval}=req.body??{};
+app.post('/api/security/operator-action',async (req,res)=>{
+ const {action,targetResource,authorizedBy,humanApproval,parameters,executionId}=req.body??{};
  const allowed=new Set(['acknowledge','deny','revoke','isolate','quarantine','investigate','rollback']);
  if(!allowed.has(action)||typeof authorizedBy!=='string'||!authorizedBy.trim()||humanApproval!==true)return res.status(403).json({success:false,error:'Supported action, identity, and explicit human approval are required.'});
- const event=appendSecurityEvent({eventType:'OPERATOR_SECURITY_ACTION_REQUESTED',severity:['isolate','quarantine','revoke'].includes(action)?'HIGH':'MEDIUM',actorId:authorizedBy,targetResource:typeof targetResource==='string'?targetResource:undefined,description:'Authorized operator requested security action: '+action,metadata:{action,humanApproval:true}});
- return res.json({success:true,accepted:true,event});
+ const policy=evaluateSecurityRequest({actionId:'security_'+action,title:'Security operator '+action,targetSystem:'Business OS Security Response',authorizedBy,parameters:parameters&&typeof parameters==='object'?parameters:{},humanApproval:true,requiresApproval:true,riskLevel:['isolate','quarantine','revoke','rollback'].includes(action)?'high':'medium',sessionId:typeof req.header('x-session-id')==='string'?req.header('x-session-id')||undefined:undefined,targetResource:typeof targetResource==='string'?targetResource:undefined});
+ if(!policy.allowed)return res.status(403).json({success:false,error:'Security Policy Gate denied the operator action: '+policy.reason});
+ appendSecurityEvent({eventType:'OPERATOR_SECURITY_ACTION_REQUESTED',severity:['isolate','quarantine','revoke'].includes(action)?'HIGH':'MEDIUM',actorId:authorizedBy,targetResource:typeof targetResource==='string'?targetResource:undefined,description:'Authorized operator requested security action: '+action,metadata:{action,humanApproval:true}});
+ try{
+   if(action==='acknowledge'||action==='investigate') return res.json({success:true,verified:true,accepted:true,action});
+   if(action==='rollback'){
+     if(typeof executionId!=='string'||!executionId)return res.status(400).json({success:false,error:'executionId is required for rollback.'});
+     return res.json({success:true,...await executeRollbackResponse(executionId,authorizedBy)});
+   }
+   if(typeof targetResource!=='string'||!targetResource.trim())return res.status(400).json({success:false,error:'targetResource is required for external security response actions.'});
+   return res.json({success:true,...await executeSecurityResponse({action,targetResource,authorizedBy,parameters:parameters&&typeof parameters==='object'?parameters:{}})});
+ }catch(error:any){
+   appendSecurityEvent({eventType:'SECURITY_RESPONSE_FAILURE',severity:'CRITICAL',actorId:authorizedBy,targetResource:typeof targetResource==='string'?targetResource:undefined,verification:'FAILED',policyDecision:'ALLOW',description:error?.message||'Security response execution failed.'});
+   return res.status(503).json({success:false,error:error?.message||'Security response failed closed.'});
+ }
 });
 app.post('/api/security/provenance/create',(req,res)=>{
  const {subject,payload,source,authorizedBy}=req.body??{};
  if(typeof subject!=='string'||typeof source!=='string'||payload===undefined||typeof authorizedBy!=='string')return res.status(400).json({success:false,error:'subject, payload, source, and authorizedBy are required.'});
  return res.json({success:true,record:createProvenanceRecord({subject,payload,source,authorizedBy})});
+});
+app.post('/api/security/vault/provenance/create',(req,res)=>{
+ const {manifest,authorizedBy}=req.body??{};
+ if(!manifest||typeof authorizedBy!=='string'||!authorizedBy.trim())return res.status(400).json({success:false,error:'manifest and authorizedBy are required.'});
+ try{return res.json({success:true,record:createVaultProvenance({manifest,authorizedBy})});}catch(error:any){return res.status(400).json({success:false,error:error?.message||'Vault provenance rejected.'});}
+});
+app.post('/api/security/vault/provenance/verify',(req,res)=>{
+ const {record,manifest}=req.body??{};
+ if(!record||!manifest)return res.status(400).json({success:false,error:'record and manifest are required.'});
+ try{const verification=verifyVaultProvenance(record,manifest);return res.status(verification.valid?200:409).json({success:verification.valid,verification});}catch(error:any){return res.status(400).json({success:false,error:error?.message||'Vault provenance verification failed.'});}
 });
 app.post('/api/security/provenance/verify',(req,res)=>{
  const {record,payload}=req.body??{};

@@ -1,5 +1,7 @@
 import { appendSecurityEvent, SecurityEvent, SecurityPolicyDecision, SecurityVerification, verifySecurityLedger } from './securityEvents.js';
 
+export type IncidentStatus = 'OPEN' | 'ACKNOWLEDGED' | 'CONTAINED' | 'RESOLVED';
+
 export type SecurityState =
   | 'SECURE'
   | 'MONITORING'
@@ -21,6 +23,9 @@ export interface SecurityActionRequest {
   requiresApproval: unknown;
   riskLevel: unknown;
   idempotencyKey?: unknown;
+  agentId?: unknown;
+  sessionId?: unknown;
+  targetResource?: unknown;
 }
 
 export interface SecurityEvaluation {
@@ -71,6 +76,9 @@ export function evaluateSecurityRequest(input: SecurityActionRequest): SecurityE
     actorId: typeof input.authorizedBy === 'string' ? input.authorizedBy : undefined,
     actionId: typeof input.actionId === 'string' ? input.actionId : undefined,
     targetSystem: typeof input.targetSystem === 'string' ? input.targetSystem : undefined,
+    agentId: typeof input.agentId === 'string' ? input.agentId : undefined,
+    sessionId: typeof input.sessionId === 'string' ? input.sessionId : undefined,
+    targetResource: typeof input.targetResource === 'string' ? input.targetResource : undefined,
     policyDecision: decision,
     verification: 'NOT_APPLICABLE',
     description: reason,
