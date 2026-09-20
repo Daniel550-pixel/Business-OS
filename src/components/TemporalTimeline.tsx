@@ -51,8 +51,8 @@ export const TemporalTimeline: React.FC<TemporalTimelineProps> = ({
   };
 
   return (
-    <div className="sticky bottom-0 z-40 w-full bg-[#07090e]/95 backdrop-blur-xl border-t border-white/[0.08] px-4 py-2.5 shadow-[0_-8px_32px_rgba(0,0,0,0.8)]">
-      <div className="max-w-[1600px] mx-auto flex flex-col md:flex-row items-center justify-between gap-3">
+    <div className="sticky bottom-0 z-40 w-full bg-[#0A0C10]/95 backdrop-blur-xl border-t border-white/[0.07] px-4 py-2.5 shadow-[0_-8px_32px_rgba(0,0,0,0.8)]">
+      <div className="w-full max-w-none flex flex-col md:flex-row items-center justify-between gap-3">
         {/* Left: Temporal State Indicator */}
         <div className="flex items-center gap-3 shrink-0">
           <div className="flex items-center gap-1.5 text-xs font-mono text-cyan-400 font-bold">
