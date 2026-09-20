@@ -119,6 +119,28 @@ export const BusinessWorld: React.FC<BusinessWorldProps> = ({
   const [tick, setTick] = useState(0);
   const [showLegend, setShowLegend] = useState(true);
   const [showInspector, setShowInspector] = useState(true);
+  const [securityTelemetry, setSecurityTelemetry] = useState<{state:string;eventCount:number;incidentCount:number;ledgerValid:boolean}>({state:'OFFLINE',eventCount:0,incidentCount:0,ledgerValid:false});
+  useEffect(() => {
+    let active = true;
+    const loadSecurity = async () => {
+      try {
+        const response = await fetch('/api/security/status');
+        if (!response.ok) return;
+        const data = await response.json();
+        if (!active) return;
+        setSecurityTelemetry({
+          state: data.status?.state || 'UNKNOWN',
+          eventCount: data.status?.ledger?.eventCount || 0,
+          incidentCount: Array.isArray(data.incidents) ? data.incidents.filter((i:any)=>i.status!=='RESOLVED').length : 0,
+          ledgerValid: data.status?.ledger?.valid === true,
+        });
+      } catch {}
+    };
+    loadSecurity();
+    const interval = window.setInterval(loadSecurity, 5000);
+    return () => { active = false; window.clearInterval(interval); };
+  }, []);
+
   const selectedIdRef = useRef(selectedId);
   const entitiesRef = useRef<Entity3D[]>([]);
   const nodesRef = useRef<WorldNode[]>([]);
@@ -363,6 +385,7 @@ export const BusinessWorld: React.FC<BusinessWorldProps> = ({
           <div className="flex items-center gap-2 text-white font-semibold text-sm tracking-[0.18em]"><Layers3 className="w-4 h-4 text-cyan-200"/>BUSINESS-OS</div>
           <span className="hidden sm:inline text-[9px] font-mono tracking-[0.16em] text-slate-400/80">3D BUSINESS WORLD / DIGITAL TWIN</span>
           <span className={`px-2 py-0.5 rounded border text-[9px] font-mono ${simulation?'border-violet-400/50 text-violet-300 bg-violet-500/10':'border-emerald-400/40 text-emerald-300 bg-emerald-500/10'}`}>{simulation?'FUTURE SIMULATION':BUSINESS_DATA_MODE === 'SIMULATED' ? 'SIMULATED TELEMETRY' : 'LIVE TELEMETRY'}</span>
+          <span className={`px-2 py-0.5 rounded border text-[9px] font-mono ${securityTelemetry.ledgerValid?'border-emerald-400/30 text-emerald-300':'border-rose-400/40 text-rose-300'}`}>SECURITY {securityTelemetry.state}</span>
         </div>
         <div className="flex items-center gap-1">
           <button onClick={()=>setPlaying(v=>!v)} className="p-2 rounded-lg hover:bg-white/10 text-slate-300" title={playing?'Pause telemetry':'Resume telemetry'}>{playing?<Pause size={15}/>:<Play size={15}/>}</button>
@@ -409,7 +432,7 @@ export const BusinessWorld: React.FC<BusinessWorldProps> = ({
 
       <footer className="absolute bottom-0 left-0 right-0 z-30 h-10 px-4 flex items-center justify-between border-t border-white/[0.07] bg-[#090d15]/90 backdrop-blur-xl text-[9px] font-mono">
         <div className="flex items-center gap-4 text-slate-500"><span>ENTITIES <b className="text-slate-300">{entities.length}</b></span><span>AI AGENTS <b className="text-cyan-300">{AGENTS.length}</b></span><span>RENDER <b className="text-emerald-300">WEBGL</b></span>{simulation&&<span className="text-violet-300">SIMULATION DELTA: +8.7% ARR</span>}</div>
-        <div className="flex items-center gap-2 text-slate-500"><Target size={11}/> TICK {String(tick).padStart(6,'0')} <Sparkles size={11} className="text-cyan-300"/></div>
+        <div className="flex items-center gap-3 text-slate-500"><span>SEC EVENTS <b className="text-cyan-300">{securityTelemetry.eventCount}</b></span><span>INCIDENTS <b className={securityTelemetry.incidentCount?'text-rose-300':'text-emerald-300'}>{securityTelemetry.incidentCount}</b></span><span className={securityTelemetry.ledgerValid?'text-emerald-300':'text-rose-300'}>LEDGER {securityTelemetry.ledgerValid?'VERIFIED':'CHECK'}</span><Target size={11}/> TICK {String(tick).padStart(6,'0')} <Sparkles size={11} className="text-cyan-300"/></div>
       </footer>
     </section>
   );
