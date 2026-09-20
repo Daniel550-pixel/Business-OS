@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
-  Activity, Bot, ChevronDown, Layers3, Minus, Pause, Play, Plus, RotateCcw,
-  Scan, ShieldCheck, Sparkles, Target, Users, WalletCards, X, Zap
+  Activity, ChevronDown, Layers3, Minus, Pause, Play, Plus, RotateCcw,
+  Scan, ShieldCheck, Sparkles, Target, X
 } from 'lucide-react';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
