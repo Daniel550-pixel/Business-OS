@@ -19,7 +19,7 @@ interface BusinessWorldProps {
 
 type Entity3D = WorldNode & { position: [number, number, number] };
 
-const FALLBACK_ENTITIES: Entity3D[] = [
+const FALLBACK_ENTITIES: WorldNode[] = [
   { id:'revenue', label:'Revenue', type:'revenue', metric:'$4.82M', subMetric:'ARR', status:'optimal', x:0, y:0, description:'Primary ARR generation and pricing intelligence.', connections:['core','customers'] },
   { id:'sales', label:'Sales Pipeline', type:'sales', metric:'$14.8M', subMetric:'PIPELINE', status:'active', x:0, y:0, description:'Enterprise pipeline, deal velocity and conversion.', connections:['core','customers'] },
   { id:'customers', label:'Customers', type:'customers', metric:'124%', subMetric:'NRR', status:'warning', x:0, y:0, description:'Retention, expansion and customer health.', connections:['sales','revenue'] },
