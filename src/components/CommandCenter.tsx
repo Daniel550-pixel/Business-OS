@@ -149,6 +149,38 @@ export const CommandCenter: React.FC<CommandCenterProps> = ({
         )}
       </div>
 
+      {/* CYBER HUD QUICK-ACCESS RUNTIME BANNER */}
+      <div className="relative flex flex-col sm:flex-row items-center justify-between gap-3 p-3.5 sm:p-4 rounded-xl cyber-command-banner text-white overflow-hidden shadow-[0_0_25px_rgba(255,119,0,0.35)]">
+        <div className="flex items-center gap-3">
+          <div className="w-8 h-8 rounded-lg bg-black/50 border border-white/40 flex items-center justify-center shrink-0 shadow-[0_0_12px_rgba(255,255,255,0.4)]">
+            <Zap className="w-4 h-4 text-amber-200" />
+          </div>
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] font-mono font-extrabold tracking-widest text-black bg-white/90 px-1.5 py-0.2 rounded uppercase">
+                CYBERNETIC COCKPIT ACTIVE
+              </span>
+              <span className="text-[11px] font-mono tracking-wider text-amber-100 font-semibold uppercase hidden md:inline">
+                AIR-GAPPED IMMUTABLE GATE // DEFCON 1
+              </span>
+            </div>
+            <div className="text-sm font-bold font-mono text-white">
+              Launch High-Fidelity Cyber HUD Reasoning & Tactical Waveform Deck
+            </div>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2.5 shrink-0 w-full sm:w-auto">
+          <button
+            onClick={() => onNavigateToView('cyber-hud')}
+            className="w-full sm:w-auto px-4 py-2 rounded-full cyber-pill-orange text-xs font-mono font-black text-black tracking-wider uppercase flex items-center justify-center gap-2 shadow-[0_0_16px_rgba(255,136,0,0.6)]"
+          >
+            <span>ENTER CYBER HUD</span>
+            <ArrowRight className="w-4 h-4" />
+          </button>
+        </div>
+      </div>
+
       {/* 2. PERSISTENT AI COMMAND CORE (Directly on Command Center) */}
       <CommandCore
         onExecuteAction={onExecuteAction}

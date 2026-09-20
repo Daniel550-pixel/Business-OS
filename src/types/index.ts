@@ -1,6 +1,7 @@
 export type ViewMode =
   | 'command-center'
   | 'command'
+  | 'cyber-hud'
   | 'business-world'
   | 'world'
   | 'missions'

@@ -24,6 +24,7 @@ import { DigitalTwinHierarchy } from './components/DigitalTwinHierarchy';
 import { ExecutiveCockpit } from './components/ExecutiveCockpit';
 import { AIIntelligenceLayer } from './components/AIIntelligenceLayer';
 import { AIActivityStream } from './components/AIActivityStream';
+import { CyberHUDView } from './components/CyberHUDView';
 
 import {
   initialMetrics,
@@ -357,6 +358,25 @@ export default function App() {
                   }}
                 />
               </div>
+            )}
+
+            {/* View: Cyber HUD Deck (Direct translation of Sci-Fi Cybernetic UI design) */}
+            {activeView === 'cyber-hud' && (
+              <CyberHUDView
+                metrics={metrics}
+                anomalies={anomalies}
+                nodes={nodes}
+                selectedNode={selectedNode}
+                onSelectNode={setSelectedNode}
+                pendingActions={pendingActions}
+                executionRecords={executionRecords}
+                onExecuteAction={handleOpenActionApproval}
+                onOpenFocusMode={handleTriggerFocus}
+                currentEpoch={currentEpoch}
+                onEpochChange={handleEpochChange}
+                onOpenCommandCore={() => setIsCommandModalOpen(true)}
+                onSelectSpatialEntity={(entity) => setSelectedSpatialEntity(entity)}
+              />
             )}
 
             {/* View: Business World & Digital Twin Hierarchy */}
