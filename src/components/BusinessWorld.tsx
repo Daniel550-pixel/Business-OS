@@ -20,12 +20,12 @@ interface BusinessWorldProps {
 type Entity3D = WorldNode & { position: [number, number, number] };
 
 const FALLBACK_ENTITIES: WorldNode[] = [
-  { id:'revenue', label:'Revenue', type:'revenue', metric:'$4.82M', subMetric:'ARR', status:'optimal', x:0, y:0, description:'Primary ARR generation and pricing intelligence.', connections:['core','customers'] },
-  { id:'sales', label:'Sales Pipeline', type:'sales', metric:'$14.8M', subMetric:'PIPELINE', status:'active', x:0, y:0, description:'Enterprise pipeline, deal velocity and conversion.', connections:['core','customers'] },
-  { id:'customers', label:'Customers', type:'customers', metric:'124%', subMetric:'NRR', status:'warning', x:0, y:0, description:'Retention, expansion and customer health.', connections:['sales','revenue'] },
-  { id:'operations', label:'Operations', type:'operations', metric:'99.99%', subMetric:'HEALTH', status:'optimal', x:0, y:0, description:'Infrastructure, capacity and service reliability.', connections:['core','finance'] },
-  { id:'finance', label:'Finance', type:'finance', metric:'$2.37M', subMetric:'LIQUIDITY', status:'optimal', x:0, y:0, description:'Treasury, cash position and capital allocation.', connections:['core','operations'] },
-  { id:'core', label:'Business Core', type:'systems', metric:'42ms', subMetric:'LATENCY', status:'active', x:0, y:0, description:'Central orchestration, policy and decision runtime.', connections:['revenue','sales','operations','finance'] },
+  { id:'revenue', label:'Revenue', type:'revenue', metric:'$4.82M', subMetric:'ARR', status:'optimal', x:0, y:0, description:'Primary ARR generation and pricing intelligence.', details:'', connections:['core','customers'] },
+  { id:'sales', label:'Sales Pipeline', type:'sales', metric:'$14.8M', subMetric:'PIPELINE', status:'active', x:0, y:0, description:'Enterprise pipeline, deal velocity and conversion.', details:'', connections:['core','customers'] },
+  { id:'customers', label:'Customers', type:'customers', metric:'124%', subMetric:'NRR', status:'warning', x:0, y:0, description:'Retention, expansion and customer health.', details:'', connections:['sales','revenue'] },
+  { id:'operations', label:'Operations', type:'operations', metric:'99.99%', subMetric:'HEALTH', status:'optimal', x:0, y:0, description:'Infrastructure, capacity and service reliability.', details:'', connections:['core','finance'] },
+  { id:'finance', label:'Finance', type:'finance', metric:'$2.37M', subMetric:'LIQUIDITY', status:'optimal', x:0, y:0, description:'Treasury, cash position and capital allocation.', details:'', connections:['core','operations'] },
+  { id:'core', label:'Business Core', type:'systems', metric:'42ms', subMetric:'LATENCY', status:'active', x:0, y:0, description:'Central orchestration, policy and decision runtime.', details:'', connections:['revenue','sales','operations','finance'] },
 ];
 
 const POSITIONS: Record<string, [number, number, number]> = {
@@ -330,10 +330,10 @@ export const BusinessWorld: React.FC<BusinessWorldProps> = ({
 
   const resetCamera=()=>sceneRef.current?.controls.reset();
   const zoom=(delta:number)=>{
-    const c=sceneRef.current?.camera;
-    if(!c) return;
-    const direction=new THREE.Vector3().subVectors(c.position,sceneRef.current.controls.target).normalize();
-    c.position.addScaledVector(direction,delta);
+    const world=sceneRef.current;
+    if(!world) return;
+    const direction=new THREE.Vector3().subVectors(world.camera.position,world.controls.target).normalize();
+    world.camera.position.addScaledVector(direction,delta);
   };
   const policyAction=()=>{
     if(!active) return;
