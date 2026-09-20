@@ -6,6 +6,7 @@ import {
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { WorldNode, ProposedAction } from '../types';
+import { BUSINESS_DATA_MODE } from '../data/runtimeState';
 
 interface BusinessWorldProps {
   nodes?: WorldNode[];
@@ -18,13 +19,13 @@ interface BusinessWorldProps {
 
 type Entity3D = WorldNode & { position: [number, number, number] };
 
-const FALLBACK_ENTITIES: Entity3D[] = [
-  { id:'revenue', label:'Revenue', type:'revenue', metric:'$4.82M', subMetric:'ARR', status:'optimal', x:0, y:0, z:0, description:'Primary ARR generation and pricing intelligence.', connections:['core','customers'] },
-  { id:'sales', label:'Sales Pipeline', type:'sales', metric:'$14.8M', subMetric:'PIPELINE', status:'active', x:0, y:0, z:0, description:'Enterprise pipeline, deal velocity and conversion.', connections:['core','customers'] },
-  { id:'customers', label:'Customers', type:'customers', metric:'124%', subMetric:'NRR', status:'warning', x:0, y:0, z:0, description:'Retention, expansion and customer health.', connections:['sales','revenue'] },
-  { id:'operations', label:'Operations', type:'operations', metric:'99.99%', subMetric:'HEALTH', status:'optimal', x:0, y:0, z:0, description:'Infrastructure, capacity and service reliability.', connections:['core','finance'] },
-  { id:'finance', label:'Finance', type:'finance', metric:'$2.37M', subMetric:'LIQUIDITY', status:'optimal', x:0, y:0, z:0, description:'Treasury, cash position and capital allocation.', connections:['core','operations'] },
-  { id:'core', label:'Business Core', type:'systems', metric:'42ms', subMetric:'LATENCY', status:'active', x:0, y:0, z:0, description:'Central orchestration, policy and decision runtime.', connections:['revenue','sales','operations','finance'] },
+const FALLBACK_ENTITIES: WorldNode[] = [
+  { id:'revenue', label:'Revenue', type:'revenue', metric:'$4.82M', subMetric:'ARR', status:'optimal', x:0, y:0, description:'Primary ARR generation and pricing intelligence.', details:{"keyDrivers":[],"riskScore":0,"headcountOrCapacity":"N/A","activeAnomalies":0,"ownerAgent":"Business Core"}, connections:['core','customers'] },
+  { id:'sales', label:'Sales Pipeline', type:'sales', metric:'$14.8M', subMetric:'PIPELINE', status:'active', x:0, y:0, description:'Enterprise pipeline, deal velocity and conversion.', details:{"keyDrivers":[],"riskScore":0,"headcountOrCapacity":"N/A","activeAnomalies":0,"ownerAgent":"Business Core"}, connections:['core','customers'] },
+  { id:'customers', label:'Customers', type:'customers', metric:'124%', subMetric:'NRR', status:'warning', x:0, y:0, description:'Retention, expansion and customer health.', details:{"keyDrivers":[],"riskScore":0,"headcountOrCapacity":"N/A","activeAnomalies":0,"ownerAgent":"Business Core"}, connections:['sales','revenue'] },
+  { id:'operations', label:'Operations', type:'operations', metric:'99.99%', subMetric:'HEALTH', status:'optimal', x:0, y:0, description:'Infrastructure, capacity and service reliability.', details:{"keyDrivers":[],"riskScore":0,"headcountOrCapacity":"N/A","activeAnomalies":0,"ownerAgent":"Business Core"}, connections:['core','finance'] },
+  { id:'finance', label:'Finance', type:'finance', metric:'$2.37M', subMetric:'LIQUIDITY', status:'optimal', x:0, y:0, description:'Treasury, cash position and capital allocation.', details:{"keyDrivers":[],"riskScore":0,"headcountOrCapacity":"N/A","activeAnomalies":0,"ownerAgent":"Business Core"}, connections:['core','operations'] },
+  { id:'core', label:'Business Core', type:'systems', metric:'42ms', subMetric:'LATENCY', status:'active', x:0, y:0, description:'Central orchestration, policy and decision runtime.', details:{"keyDrivers":[],"riskScore":0,"headcountOrCapacity":"N/A","activeAnomalies":0,"ownerAgent":"Business Core"}, connections:['revenue','sales','operations','finance'] },
 ];
 
 const POSITIONS: Record<string, [number, number, number]> = {
@@ -245,12 +246,12 @@ export const BusinessWorld: React.FC<BusinessWorldProps> = ({
       const hit=hits.find(h=>h.object.userData.entityId);
       if (!hit) return;
       const id=hit.object.userData.entityId as string;
-      const entity=entities.find(e=>e.id===id);
+      const entity=entitiesRef.current.find(e=>e.id===id);
       if (!entity) return;
       setSelectedId(id);
-      const source=nodes.find(n=>n.id===id);
-      if(source) onSelectNode?.(source);
-      onQuickInspectNode?.(id);
+      const source=nodesRef.current.find(n=>n.id===id);
+      if(source) onSelectNodeRef.current?.(source);
+      onQuickInspectNodeRef.current?.(id);
     };
     renderer.domElement.addEventListener('click',click);
 
@@ -263,7 +264,7 @@ export const BusinessWorld: React.FC<BusinessWorldProps> = ({
       const t=clock.getElapsedTime();
       controls.update();
       groups.forEach((g,id)=>{
-        const selected=id===selectedId;
+        const selected=id===selectedIdRef.current;
         g.scale.lerp(new THREE.Vector3(selected?1.16:1,selected?1.16:1,selected?1.16:1),.12);
         const ring=g.children[1];
         if(ring) ring.rotation.z=t*.35;
@@ -303,7 +304,7 @@ export const BusinessWorld: React.FC<BusinessWorldProps> = ({
       renderer.domElement.remove();
       sceneRef.current=null;
     };
-  }, []);
+  }, [entities]);
 
   useEffect(()=>{
     const world=sceneRef.current;
@@ -329,10 +330,10 @@ export const BusinessWorld: React.FC<BusinessWorldProps> = ({
 
   const resetCamera=()=>sceneRef.current?.controls.reset();
   const zoom=(delta:number)=>{
-    const c=sceneRef.current?.camera;
-    if(!c) return;
-    const direction=new THREE.Vector3().subVectors(c.position,sceneRef.current.controls.target).normalize();
-    c.position.addScaledVector(direction,delta);
+    const world=sceneRef.current;
+    if(!world) return;
+    const direction=new THREE.Vector3().subVectors(world.camera.position,world.controls.target).normalize();
+    world.camera.position.addScaledVector(direction,delta);
   };
   const policyAction=()=>{
     if(!active) return;
@@ -347,7 +348,7 @@ export const BusinessWorld: React.FC<BusinessWorldProps> = ({
 
   useEffect(()=>{
     if(!playing) return;
-    const id=window.setInterval(()=>setTick(t=>t+1),80);
+    const id=window.setInterval(()=>setTick(t=>t+1),250);
     return()=>window.clearInterval(id);
   },[playing]);
 
@@ -361,7 +362,7 @@ export const BusinessWorld: React.FC<BusinessWorldProps> = ({
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-2 text-white font-semibold text-sm tracking-[0.18em]"><Layers3 className="w-4 h-4 text-cyan-200"/>BUSINESS-OS</div>
           <span className="hidden sm:inline text-[9px] font-mono tracking-[0.16em] text-slate-400/80">3D BUSINESS WORLD / DIGITAL TWIN</span>
-          <span className={`px-2 py-0.5 rounded border text-[9px] font-mono ${simulation?'border-violet-400/50 text-violet-300 bg-violet-500/10':'border-emerald-400/40 text-emerald-300 bg-emerald-500/10'}`}>{simulation?'FUTURE SIMULATION':'LIVE TELEMETRY'}</span>
+          <span className={`px-2 py-0.5 rounded border text-[9px] font-mono ${simulation?'border-violet-400/50 text-violet-300 bg-violet-500/10':'border-emerald-400/40 text-emerald-300 bg-emerald-500/10'}`}>{simulation?'FUTURE SIMULATION':BUSINESS_DATA_MODE === 'SIMULATED' ? 'SIMULATED TELEMETRY' : 'LIVE TELEMETRY'}</span>
         </div>
         <div className="flex items-center gap-1">
           <button onClick={()=>setPlaying(v=>!v)} className="p-2 rounded-lg hover:bg-white/10 text-slate-300" title={playing?'Pause telemetry':'Resume telemetry'}>{playing?<Pause size={15}/>:<Play size={15}/>}</button>
@@ -373,8 +374,8 @@ export const BusinessWorld: React.FC<BusinessWorldProps> = ({
       <div className="absolute left-5 bottom-5 z-20 flex flex-col gap-1">
         <button onClick={()=>zoom(-4)} className="p-2 rounded-lg border border-white/10 bg-[#0b1018]/90 text-slate-300 hover:text-white"><Plus size={15}/></button>
         <button onClick={()=>zoom(4)} className="p-2 rounded-lg border border-white/10 bg-[#0b1018]/90 text-slate-300 hover:text-white"><Minus size={15}/></button>
-        <button onClick={()=>{const c=sceneRef.current?.controls;if(c){c.getAzimuthalAngle();c.rotateLeft(.35);}}} className="p-2 rounded-lg border border-white/10 bg-[#0b1018]/90 text-slate-300 hover:text-white"><RotateCcw size={15}/></button>
-        <button onClick={()=>{const c=sceneRef.current?.controls;if(c)c.rotateLeft(-.35);}} className="p-2 rounded-lg border border-white/10 bg-[#0b1018]/90 text-slate-300 hover:text-white"><Scan size={15}/></button>
+        <button onClick={()=>{const world=sceneRef.current;if(world){const offset=world.camera.position.clone().sub(world.controls.target).applyAxisAngle(new THREE.Vector3(0,1,0),.35);world.camera.position.copy(world.controls.target).add(offset);world.camera.lookAt(world.controls.target);}}} className="p-2 rounded-lg border border-white/10 bg-[#0b1018]/90 text-slate-300 hover:text-white"><RotateCcw size={15}/></button>
+        <button onClick={()=>{const world=sceneRef.current;if(world){const offset=world.camera.position.clone().sub(world.controls.target).applyAxisAngle(new THREE.Vector3(0,1,0),-.35);world.camera.position.copy(world.controls.target).add(offset);world.camera.lookAt(world.controls.target);}}} className="p-2 rounded-lg border border-white/10 bg-[#0b1018]/90 text-slate-300 hover:text-white"><Scan size={15}/></button>
       </div>
 
       {showLegend&&<div className="absolute left-[68px] bottom-5 z-20 p-3 rounded-xl border border-white/10 bg-[#050a12]/72 backdrop-blur-xl text-[9px] font-mono text-slate-400">

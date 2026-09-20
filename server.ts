@@ -1,7 +1,7 @@
 import express from 'express';
 import path from 'path';
-import crypto from 'crypto';
-import { GoogleGenAI } from '@google/genai';
+import { commitExecution, getExecutionById, getExecutionRecords, rollbackExecution } from './server/actionRuntime.js';
+import { GoogleGenAI, ThinkingLevel } from '@google/genai';
 import dotenv from 'dotenv';
 
 dotenv.config();
@@ -38,6 +38,7 @@ app.get('/api/health', (req, res) => {
     environment: process.env.NODE_ENV || 'development',
     geminiConfigured: !!(process.env.GEMINI_API_KEY && process.env.GEMINI_API_KEY !== 'MY_GEMINI_API_KEY'),
     timestamp: new Date().toISOString(),
+    dataMode: 'SIMULATED',
   });
 });
 
@@ -95,7 +96,7 @@ User Request: ${prompt}`,
         config: {
           systemInstruction,
           responseMimeType: 'application/json',
-          temperature: 0.2,
+          thinkingConfig: { thinkingLevel: ThinkingLevel.MEDIUM },
         },
       });
 
@@ -307,66 +308,94 @@ User Request: ${prompt}`,
   res.json({ success: true, source: 'offline-intelligence-core', data: result });
 });
 
-// Server-side execution ledger: records are authoritative for the current runtime.
-const executionLedger = new Map<string, {
-  executionId: string;
-  actionId: string;
-  title: string;
-  targetSystem: string;
-  authorizedBy: string;
-  timestamp: string;
-  status: 'COMMITTED' | 'ROLLED_BACK';
-  verification: string;
-  parameters: Record<string, unknown>;
-  auditHash: string;
-}>();
-
-// Action Execution endpoint (implements AI DECIDES != AI EXECUTES)
-app.post('/api/actions/execute', (req, res) => {
-  const { actionId, title, targetSystem, authorizedBy, parameters, humanApproval } = req.body ?? {};
-  if (!actionId || !title || !targetSystem || !authorizedBy || humanApproval !== true) {
-    return res.status(400).json({ success: false, error: 'Policy Gate requires a complete action and explicit human approval.' });
+function evaluatePolicyGate(input: {
+  actionId: unknown;
+  title: unknown;
+  targetSystem: unknown;
+  authorizedBy: unknown;
+  parameters: unknown;
+  humanApproval: unknown;
+  requiresApproval: unknown;
+  riskLevel: unknown;
+}) {
+  const allowedRisk = new Set(['low', 'medium', 'high']);
+  if (typeof input.actionId !== 'string' || typeof input.title !== 'string' || typeof input.targetSystem !== 'string') {
+    return 'Action identity is incomplete.';
   }
+  if (!allowedRisk.has(String(input.riskLevel))) return 'Unsupported risk level.';
+  if (input.requiresApproval !== true || input.humanApproval !== true) return 'Explicit human approval is required.';
+  if (!input.parameters || typeof input.parameters !== 'object' || Array.isArray(input.parameters)) {
+    return 'Action parameters must be a JSON object.';
+  }
+  const allowedTargets = (process.env.EXECUTION_ALLOWED_TARGETS || '')
+    .split(',')
+    .map((target) => target.trim())
+    .filter(Boolean);
+  if (allowedTargets.length > 0 && !allowedTargets.includes(input.targetSystem)) {
+    return `Target system "${input.targetSystem}" is not allowlisted by Policy Gate.`;
+  }
+  return null;
+}
 
-  const timestamp = new Date().toISOString();
-  const canonical = JSON.stringify({ actionId, title, targetSystem, authorizedBy, parameters: parameters || {}, timestamp });
-  const auditHash = crypto.createHash('sha256').update(canonical).digest('hex');
-
-  const executionRecord = {
-    executionId: `exec_${crypto.randomUUID()}`,
-    actionId,
-    title,
-    targetSystem,
-    authorizedBy,
-    timestamp,
-    status: 'COMMITTED',
-    verification: 'VERIFIED_DETERMINISTIC_POLICY',
-    parameters: parameters || {},
-    auditHash,
-  };
-
-  executionLedger.set(executionRecord.executionId, executionRecord);
-  res.json({
-    success: true,
-    message: `Action "${title}" safely verified by Policy Gate and executed.`,
-    executionRecord,
-  });
+// Durable execution runtime. AI proposals never execute directly; an approved action must
+// pass the Policy Gate and a configured adapter must verify the external mutation.
+app.get('/api/actions/executions', (_req, res) => {
+  res.json({ success: true, executionRecords: getExecutionRecords() });
 });
 
-app.post('/api/actions/rollback', (req, res) => {
+app.post('/api/actions/execute', async (req, res) => {
+  const { actionId, title, targetSystem, authorizedBy, parameters, humanApproval, idempotencyKey, requiresApproval, riskLevel } = req.body ?? {};
+  const policyError = evaluatePolicyGate({ actionId, title, targetSystem, authorizedBy, parameters, humanApproval, requiresApproval, riskLevel });
+  if (policyError) {
+    return res.status(403).json({ success: false, error: `Policy Gate denied the action: ${policyError}` });
+  }
+  if (!idempotencyKey || typeof idempotencyKey !== 'string') {
+    return res.status(400).json({ success: false, error: 'An idempotency key is required for execution.' });
+  }
+
+  try {
+    const result = await commitExecution({
+      actionId,
+      title,
+      targetSystem,
+      authorizedBy,
+      parameters: parameters || {},
+      idempotencyKey,
+    });
+    return res.json({
+      success: true,
+      duplicate: result.duplicate,
+      message: result.duplicate
+        ? 'Idempotent execution request resolved to an existing verified execution.'
+        : `Action "${title}" was verified and committed by the configured execution adapter.`,
+      executionRecord: result.record,
+    });
+  } catch (error: any) {
+    return res.status(503).json({
+      success: false,
+      error: error?.message || 'Execution adapter rejected the mutation. No ledger commit was recorded.',
+    });
+  }
+});
+
+app.post('/api/actions/rollback', async (req, res) => {
   const { executionId, humanApproval } = req.body ?? {};
   if (!executionId || humanApproval !== true) {
     return res.status(400).json({ success: false, error: 'Rollback requires an execution ID and explicit human approval.' });
   }
-  const record = executionLedger.get(executionId);
-  if (!record) return res.status(404).json({ success: false, error: 'Execution record not found.' });
-  if (record.status !== 'COMMITTED') return res.status(409).json({ success: false, error: 'Execution is not currently committed.' });
+  if (!getExecutionById(executionId)) {
+    return res.status(404).json({ success: false, error: 'Execution record not found.' });
+  }
 
-  const rollbackTimestamp = new Date().toISOString();
-  const rollbackHash = crypto.createHash('sha256').update(JSON.stringify({ executionId, actionId: record.actionId, status: 'ROLLED_BACK', rollbackTimestamp })).digest('hex');
-  const rolledBack = { ...record, status: 'ROLLED_BACK' as const, verification: 'VERIFIED_ROLLBACK_POLICY', auditHash: rollbackHash };
-  executionLedger.set(executionId, rolledBack);
-  res.json({ success: true, executionRecord: rolledBack });
+  try {
+    const rolledBack = await rollbackExecution(executionId);
+    return res.json({ success: true, executionRecord: rolledBack });
+  } catch (error: any) {
+    return res.status(503).json({
+      success: false,
+      error: error?.message || 'Rollback adapter rejected the reversal. The prior ledger event remains unchanged.',
+    });
+  }
 });
 
 // Production static file serving or Vite dev middleware
