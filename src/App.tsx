@@ -520,7 +520,6 @@ export default function App() {
                     pendingActions={pendingActions}
                     recentExecutions={executionRecords}
                     onExecuteAction={handleOpenActionApproval}
-           executedActionIds={executedActionIds}
                     onSelectMission={(m) => {
                       setSelectedMission(m);
                       setActiveView('missions');
