@@ -16,6 +16,7 @@ export interface ExecutionRecord {
   parameters: Record<string, unknown>;
   auditHash: string;
   previousAuditHash: string | null;
+  idempotencyKey: string;
 }
 
 interface LedgerEvent {
@@ -93,11 +94,41 @@ function ensureLedger() {
   if (!existsSync(ledgerPath)) appendFileSync(ledgerPath, '');
 }
 
+function auditHashFor(eventType: LedgerEvent['type'], record: ExecutionRecord) {
+  if (eventType === 'EXECUTION_COMMITTED') {
+    return hashRecord({
+      event: eventType,
+      executionId: record.executionId,
+      actionId: record.actionId,
+      targetSystem: record.targetSystem,
+      authorizedBy: record.authorizedBy,
+      timestamp: record.timestamp,
+      parameters: record.parameters,
+      previousAuditHash: record.previousAuditHash,
+    });
+  }
+  return hashRecord({
+    event: eventType,
+    executionId: record.executionId,
+    actionId: record.actionId,
+    rollbackTimestamp: record.timestamp,
+    previousAuditHash: record.previousAuditHash,
+  });
+}
+
 function loadEvents(): LedgerEvent[] {
   ensureLedger();
   const raw = readFileSync(ledgerPath, 'utf8');
   if (!raw.trim()) return [];
-  return raw.split(/\r?\n/).filter(Boolean).map((line) => JSON.parse(line) as LedgerEvent);
+  const events = raw.split(/\r?\n/).filter(Boolean).map((line) => JSON.parse(line) as LedgerEvent);
+  let previousHash: string | null = null;
+  for (const event of events) {
+    if (event.record.previousAuditHash !== previousHash || event.record.auditHash !== auditHashFor(event.type, event.record)) {
+      throw new Error('Execution ledger integrity check failed: hash chain is inconsistent or tampered.');
+    }
+    previousHash = event.record.auditHash;
+  }
+  return events;
 }
 
 function appendEvent(event: LedgerEvent) {
@@ -138,9 +169,7 @@ export async function commitExecution(input: {
   idempotencyKey: string;
 }) {
   const existing = currentRecords().find(
-    (record) => record.status === 'COMMITTED' && record.actionId === input.actionId && record.parameters &&
-      hashRecord({ actionId: record.actionId, title: record.title, targetSystem: record.targetSystem, parameters: record.parameters }) ===
-      hashRecord({ actionId: input.actionId, title: input.title, targetSystem: input.targetSystem, parameters: input.parameters })
+    (record) => record.status === 'COMMITTED' && record.idempotencyKey === input.idempotencyKey
   );
   if (existing) return { record: existing, duplicate: true };
 
@@ -174,6 +203,7 @@ export async function commitExecution(input: {
     status: 'COMMITTED',
     verification: 'ADAPTER_VERIFIED',
     parameters: input.parameters,
+    idempotencyKey: input.idempotencyKey,
     previousAuditHash,
     auditHash: hashRecord({
       event: 'EXECUTION_COMMITTED',
@@ -211,6 +241,7 @@ export async function rollbackExecution(executionId: string) {
     status: 'ROLLED_BACK',
     timestamp: rollbackTimestamp,
     verification: 'ROLLBACK_ADAPTER_VERIFIED',
+    idempotencyKey: record.idempotencyKey,
     previousAuditHash,
     auditHash: hashRecord({
       event: 'EXECUTION_ROLLED_BACK',
