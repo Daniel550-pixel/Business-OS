@@ -29,6 +29,7 @@ interface CommandCoreProps {
   onSelectEntityId?: (entityId: string) => void;
   onNavigateToView?: (view: ViewMode) => void;
   onSetOperatingMode?: (mode: OperatingMode) => void;
+  executedActionIds?: string[];
 }
 
 export const CommandCore: React.FC<CommandCoreProps> = ({
@@ -43,12 +44,12 @@ export const CommandCore: React.FC<CommandCoreProps> = ({
   onSelectEntityId,
   onNavigateToView,
   onSetOperatingMode,
+  executedActionIds = [],
 }) => {
   const [inputQuery, setInputQuery] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
   const [analysisSteps, setAnalysisSteps] = useState<string[]>([]);
   const [result, setResult] = useState<AICommandResponse | null>(null);
-  const [executedActionIds, setExecutedActionIds] = useState<string[]>([]);
 
   const sampleQueries = [
     'Investigate the enterprise revenue anomaly and cause analysis.',
@@ -141,7 +142,6 @@ export const CommandCore: React.FC<CommandCoreProps> = ({
 
   const handleAuthorizeAction = (action: ProposedAction) => {
     onExecuteAction(action);
-    setExecutedActionIds((prev) => [...prev, action.id]);
   };
 
   const handlePromoteToMission = () => {
@@ -228,7 +228,7 @@ export const CommandCore: React.FC<CommandCoreProps> = ({
               </>
             ) : (
               <>
-                <span>Execute</span>
+                <span>Analyze</span>
                 <Send className="w-3 h-3" />
               </>
             )}
