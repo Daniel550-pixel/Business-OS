@@ -60,6 +60,7 @@ import {
   ProposedAction,
   ExecutionRecord,
 } from './types';
+import { BUSINESS_DATA_MODE } from './data/runtimeState';
 
 export default function App() {
   useEffect(() => {
@@ -127,7 +128,14 @@ export default function App() {
   const [highlightedNodeIds, setHighlightedNodeIds] = useState<string[]>([]);
 
   const [events] = useState(initialEvents);
-  const [pendingActions, setPendingActions] = useState<ProposedAction[]>(initialPendingActions);
+  const [pendingActions, setPendingActions] = useState<ProposedAction[]>(() => {
+    try {
+      const stored = window.localStorage.getItem('business-os.pending-actions');
+      return stored ? JSON.parse(stored) as ProposedAction[] : initialPendingActions;
+    } catch {
+      return initialPendingActions;
+    }
+  });
   const [executionRecords, setExecutionRecords] = useState<ExecutionRecord[]>(initialExecutionRecords);
   const [executedActionIds, setExecutedActionIds] = useState<string[]>([]);
 
@@ -169,6 +177,50 @@ export default function App() {
   const [activityTicks, setActivityTicks] = useState(initialAIActivityStreamTicks);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [showBackToPlanet, setShowBackToPlanet] = useState(false);
+
+  // The browser keeps only proposal state; the durable execution ledger is server-authoritative.
+  useEffect(() => {
+    try {
+      window.localStorage.setItem('business-os.pending-actions', JSON.stringify(pendingActions));
+    } catch {
+      // Storage is an optimization; server-side execution remains authoritative.
+    }
+  }, [pendingActions]);
+
+  useEffect(() => {
+    const syncPendingActions = (event: StorageEvent) => {
+      if (event.key !== 'business-os.pending-actions') return;
+      try {
+        setPendingActions(event.newValue ? JSON.parse(event.newValue) as ProposedAction[] : []);
+      } catch {
+        // Ignore malformed cross-tab state.
+      }
+    };
+    window.addEventListener('storage', syncPendingActions);
+
+    fetch('/api/actions/executions')
+      .then((response) => response.ok ? response.json() : Promise.reject(new Error('Execution ledger unavailable')))
+      .then((payload) => {
+        if (!payload?.success || !Array.isArray(payload.executionRecords)) return;
+        const records: ExecutionRecord[] = payload.executionRecords.map((record: any) => ({
+          id: record.executionId,
+          actionTitle: record.title,
+          targetSystem: record.targetSystem,
+          authorizedBy: record.authorizedBy,
+          timestamp: record.timestamp,
+          status: record.status,
+          reversible: record.status === 'COMMITTED',
+          hash: record.auditHash,
+        }));
+        setExecutionRecords(records);
+        setExecutedActionIds(payload.executionRecords.map((record: any) => record.actionId).filter(Boolean));
+      })
+      .catch(() => {
+        // Keep the local mock ledger visible if the server is unavailable.
+      });
+
+    return () => window.removeEventListener('storage', syncPendingActions);
+  }, []);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -214,6 +266,7 @@ export default function App() {
           authorizedBy: 'Executive Operator (You)',
           parameters: action.parameters || {},
           humanApproval: true,
+          idempotencyKey: `${action.id}:${JSON.stringify(action.parameters || {})}`,
         }),
       });
       const payload = await response.json();
@@ -242,7 +295,7 @@ export default function App() {
           timestamp: new Date().toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' }),
           agentName: 'POLICY GATE',
           agentRole: 'Cryptographic Authorizer',
-          action: `authorized and executed immutable mutation: "${action.title}"`,
+          action: `authorized and verified external mutation: "${action.title}"`,
           target: action.targetSystem,
           category: 'policy_gate',
           confidence: 100,
@@ -251,7 +304,7 @@ export default function App() {
       ]);
       setApprovalAction(null);
       setSystemState('mission_executing');
-      showToast(`Committed mutation: "${action.title}" via Policy Gate`);
+      showToast(`Verified external mutation: "${action.title}" via Policy Gate`);
     } catch (error) {
       console.error('Policy Gate execution failed:', error);
       showToast('Policy Gate rejected the execution. No mutation was committed.');
