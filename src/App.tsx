@@ -264,6 +264,8 @@ export default function App() {
           targetSystem: action.targetSystem,
           authorizedBy: 'Executive Operator (You)',
           parameters: action.parameters || {},
+          requiresApproval: action.requiresApproval,
+          riskLevel: action.riskLevel,
           humanApproval: true,
           idempotencyKey: `${action.id}:${JSON.stringify(action.parameters || {})}`,
         }),
