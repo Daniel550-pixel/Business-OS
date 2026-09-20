@@ -264,7 +264,7 @@ export const BusinessWorld: React.FC<BusinessWorldProps> = ({
       const t=clock.getElapsedTime();
       controls.update();
       groups.forEach((g,id)=>{
-        const selected=id===selectedId;
+        const selected=id===selectedIdRef.current;
         g.scale.lerp(new THREE.Vector3(selected?1.16:1,selected?1.16:1,selected?1.16:1),.12);
         const ring=g.children[1];
         if(ring) ring.rotation.z=t*.35;
