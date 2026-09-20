@@ -160,16 +160,26 @@ export const BusinessWorld: React.FC<BusinessWorldProps> = ({
   ];
 
   return (
-    <section className="relative w-full min-h-[720px] h-[calc(100vh-235px)] overflow-hidden rounded-2xl border border-white/[0.08] bg-[#070a10] os-cyber-corners os-scanlines">
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_42%,rgba(0,240,255,0.08),transparent_34%),radial-gradient(circle_at_75%_65%,rgba(168,85,247,0.07),transparent_30%)] pointer-events-none" />
+    <section className="relative w-full min-h-[720px] h-[calc(100vh-235px)] overflow-hidden rounded-[28px] border border-white/[0.09] bg-[#02060f] os-cyber-corners os-scanlines">
+      <video
+        className="absolute inset-0 h-full w-full object-cover opacity-[0.38] mix-blend-screen pointer-events-none select-none"
+        autoPlay muted loop playsInline preload="auto"
+        aria-hidden="true"
+        poster="https://d2ol7oe51mr4n9v9cf9b4n9.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/130837c4-0244-4f37-9c61-8d801d93fd29.jpg"
+        src="https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260912_104303_0c6d60b2-9353-408e-9449-585108a22fb5.mp4"
+      />
+      <div className="absolute inset-0 bg-[radial-gradient(70%_58%_at_50%_46%,rgba(2,6,15,0.12),rgba(2,6,15,0.52)_62%,rgba(2,6,15,0.82)_100%)] pointer-events-none" />
+      <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(2,6,15,0.78)_0%,rgba(2,6,15,0.18)_28%,rgba(2,6,15,0.28)_64%,rgba(2,6,15,0.86)_100%)] pointer-events-none" />
+      <div className="absolute left-1/2 top-1/2 h-72 w-72 -translate-x-1/2 -translate-y-1/2 rounded-full bg-cyan-300/[0.035] blur-3xl pointer-events-none" />
+      <div className="absolute inset-0 bg-[radial-gradient(60%_40%_at_50%_48%,transparent_0%,rgba(2,6,15,0.34)_100%)] pointer-events-none" />
 
-      <header className="absolute top-0 left-0 right-0 z-30 h-14 px-4 flex items-center justify-between border-b border-white/[0.07] bg-[#090d15]/85 backdrop-blur-xl">
+      <header className="absolute top-0 left-0 right-0 z-30 h-[68px] px-5 lg:px-7 flex items-center justify-between border-b border-white/[0.09] bg-[#02060f]/58 backdrop-blur-2xl">
         <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2 text-white font-semibold text-sm">
-            <Layers3 className="w-4 h-4 text-cyan-300" />
-            BUSINESS WORLD
+          <div className="flex items-center gap-2 text-white font-semibold text-sm tracking-[0.18em]">
+            <Layers3 className="w-4 h-4 text-cyan-200" />
+            BUSINESS-OS
           </div>
-          <span className="text-[10px] font-mono text-slate-500">SPATIAL DIGITAL TWIN / LIVE</span>
+          <span className="hidden sm:inline text-[9px] font-mono tracking-[0.16em] text-slate-400/80">SPATIAL INTELLIGENCE / DIGITAL TWIN</span>
           <span className={`px-2 py-0.5 rounded border text-[9px] font-mono ${simulation ? 'border-violet-400/50 text-violet-300 bg-violet-500/10' : 'border-emerald-400/40 text-emerald-300 bg-emerald-500/10'}`}>
             {simulation ? 'FUTURE SIMULATION' : 'LIVE TELEMETRY'}
           </span>
@@ -276,7 +286,7 @@ export const BusinessWorld: React.FC<BusinessWorldProps> = ({
           </div>
         </div>
 
-        <div className="absolute left-4 bottom-4 z-20 flex flex-col gap-1">
+        <div className="absolute left-5 bottom-5 z-20 flex flex-col gap-1">
           <button onClick={() => setCamera(c => ({...c, zoom: Math.min(1.65,c.zoom+0.1)}))} className="p-2 rounded-lg border border-white/10 bg-[#0b1018]/90 text-slate-300 hover:text-white"><Plus size={15}/></button>
           <button onClick={() => setCamera(c => ({...c, zoom: Math.max(.55,c.zoom-.1)}))} className="p-2 rounded-lg border border-white/10 bg-[#0b1018]/90 text-slate-300 hover:text-white"><Minus size={15}/></button>
           <button onClick={() => setCamera(c => ({...c, yaw: c.yaw-15}))} className="p-2 rounded-lg border border-white/10 bg-[#0b1018]/90 text-slate-300 hover:text-white"><RotateCcw size={15}/></button>
@@ -284,14 +294,14 @@ export const BusinessWorld: React.FC<BusinessWorldProps> = ({
         </div>
 
         {showLegend && (
-          <div className="absolute left-16 bottom-4 z-20 p-3 rounded-xl border border-white/10 bg-[#0b1018]/90 backdrop-blur-xl text-[9px] font-mono text-slate-400">
+          <div className="absolute left-[68px] bottom-5 z-20 p-3 rounded-xl border border-white/10 bg-[#050a12]/72 backdrop-blur-xl text-[9px] font-mono text-slate-400">
             <div className="flex items-center gap-2"><Crosshair size={11} className="text-cyan-300"/> DRAG = ORBIT</div>
             <div className="mt-1 text-slate-600">SHIFT + DRAG = PAN · WHEEL = ZOOM</div>
             <div className="mt-2 flex items-center gap-3"><span className="text-emerald-300">● LIVE</span><span className="text-violet-300">● AI AGENT</span><span className="text-amber-300">● WARNING</span></div>
           </div>
         )}
 
-        <button onClick={() => setShowLegend(v => !v)} className="absolute right-4 bottom-4 z-20 px-2 py-1.5 rounded-lg border border-white/10 bg-[#0b1018]/90 text-[9px] font-mono text-slate-400">
+        <button onClick={() => setShowLegend(v => !v)} className="absolute right-5 bottom-5 z-20 px-2 py-1.5 rounded-lg border border-white/10 bg-[#0b1018]/90 text-[9px] font-mono text-slate-400">
           {showLegend ? 'HIDE LEGEND' : 'SHOW LEGEND'}
         </button>
 
