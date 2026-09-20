@@ -1,5 +1,7 @@
 import { appendSecurityEvent, SecurityEvent, SecurityPolicyDecision, SecurityVerification, verifySecurityLedger } from './securityEvents.js';
 
+export type IncidentStatus = 'OPEN' | 'ACKNOWLEDGED' | 'CONTAINED' | 'RESOLVED';
+
 export type SecurityState =
   | 'SECURE'
   | 'MONITORING'
