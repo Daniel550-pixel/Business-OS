@@ -25,6 +25,7 @@ import { ExecutiveCockpit } from './components/ExecutiveCockpit';
 import { AIIntelligenceLayer } from './components/AIIntelligenceLayer';
 import { AIActivityStream } from './components/AIActivityStream';
 import { CyberHUDView } from './components/CyberHUDView';
+import { SecurityHUD } from './components/SecurityHUD';
 import { PlanetHero } from './components/PlanetHero';
 
 import {
@@ -548,7 +549,31 @@ export default function App() {
               )}
             </div>
 
-            {/* View: Cyber HUD Deck (Direct translation of Sci-Fi Cybernetic UI design) */}
+            {/* View: Security Layer — authoritative security telemetry surface */}
+            {activeView === 'cyber-hud' && (
+              <SecurityHUD />
+            )}
+
+            {/* View: Legacy Cyber HUD Deck */}
+            {activeView === 'legacy-cyber-hud' && (
+              <CyberHUDView
+                metrics={metrics}
+                anomalies={anomalies}
+                nodes={nodes}
+                selectedNode={selectedNode}
+                onSelectNode={setSelectedNode}
+                pendingActions={pendingActions}
+                executionRecords={executionRecords}
+                onExecuteAction={handleOpenActionApproval}
+                onOpenFocusMode={handleTriggerFocus}
+                currentEpoch={currentEpoch}
+                onEpochChange={handleEpochChange}
+                onOpenCommandCore={() => setIsCommandModalOpen(true)}
+                onSelectSpatialEntity={(entity) => setSelectedSpatialEntity(entity)}
+              />
+            )}
+
+            {/* View: Business World & Digital Twin Hierarchy */}
             {activeView === 'cyber-hud' && (
               <CyberHUDView
                 metrics={metrics}
