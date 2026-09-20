@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { getDailySeries, getGlobalQuote, getMarketDataStatus } from '../server/marketData.js';
+import { analyzeDailySeries, getDailySeries, getGlobalQuote, getMarketDataStatus } from '../server/marketData.js';
 
 process.env.ALPHAVANTAGE_API_KEY = 'test-key';
 process.env.ALPHAVANTAGE_BASE_URL = 'https://example.test/query';
@@ -55,6 +55,20 @@ try {
   const series = await getDailySeries('IBM');
   assert.equal(series[0].close, 182.5);
   assert.equal(series[0].volume, 123456);
+
+  const analysis = analyzeDailySeries('IBM', Array.from({ length: 55 }, (_, i) => ({
+    date: `2026-07-${String(i + 1).padStart(2, '0')}`,
+    open: 100 + i,
+    high: 101 + i,
+    low: 99 + i,
+    close: 100 + i,
+    volume: 1000,
+  })));
+  assert.equal(analysis.symbol, 'IBM');
+  assert.equal(analysis.trend, 'BULLISH');
+  assert.equal(analysis.sma20, 127.5);
+  assert.equal(analysis.sma50, 127.5);
+  assert.equal(analysis.anomaly, false);
 
   console.log('market-data: PASS');
 } finally {
