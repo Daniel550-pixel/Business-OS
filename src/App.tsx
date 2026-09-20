@@ -129,6 +129,7 @@ export default function App() {
   const [events] = useState(initialEvents);
   const [pendingActions, setPendingActions] = useState<ProposedAction[]>(initialPendingActions);
   const [executionRecords, setExecutionRecords] = useState<ExecutionRecord[]>(initialExecutionRecords);
+  const [executedActionIds, setExecutedActionIds] = useState<string[]>([]);
 
   // Digital Twin Hierarchy & Spatial Entities
   const [selectedSpatialEntity, setSelectedSpatialEntity] = useState<HierarchyEntity | null>(null);
@@ -233,6 +234,7 @@ export default function App() {
       };
 
       setPendingActions((prev) => prev.filter((a) => a.id !== action.id));
+      setExecutedActionIds((prev) => [...new Set([...prev, action.id])]);
       setExecutionRecords((prev) => [newRecord, ...prev]);
       setActivityTicks((prev) => [
         {
@@ -446,6 +448,7 @@ export default function App() {
                     pendingActions={pendingActions}
                     recentExecutions={executionRecords}
                     onExecuteAction={handleOpenActionApproval}
+           executedActionIds={executedActionIds}
                     onSelectMission={(m) => {
                       setSelectedMission(m);
                       setActiveView('missions');
