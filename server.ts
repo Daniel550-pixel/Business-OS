@@ -4,6 +4,9 @@ import { commitExecution, getExecutionById, getExecutionRecords, rollbackExecuti
 import { GoogleGenAI, ThinkingLevel } from '@google/genai';
 import dotenv from 'dotenv';
 import { evaluateSecurityRequest, getSecurityIntegrity, getSecurityStatus, recordVerificationFailure, recordVerifiedExecution } from './server/security/securityKernel.js';
+import { getSecurityEvents, appendSecurityEvent } from './server/security/securityEvents.js';
+import { detectIncidents, listIncidents, updateIncident } from './server/security/incidents.js';
+import { createProvenanceRecord, verifyProvenanceRecord } from './server/security/provenance.js';
 import { getSecurityEvents } from './server/security/securityEvents.js';
 
 dotenv.config();
@@ -12,6 +15,22 @@ const app = express();
 const PORT = 3000;
 
 app.use(express.json());
+
+app.use((req, _res, next) => {
+  const ignored = req.path === '/api/health' || req.path.startsWith('/api/security/');
+  if (!ignored && req.path.startsWith('/api/')) {
+    appendSecurityEvent({
+      eventType: 'API_ACCESS',
+      severity: req.method === 'POST' ? 'LOW' : 'INFO',
+      actorId: typeof req.header('x-actor-id') === 'string' ? req.header('x-actor-id') || undefined : undefined,
+      sessionId: typeof req.header('x-session-id') === 'string' ? req.header('x-session-id') || undefined : undefined,
+      targetResource: req.path,
+      description: 'API resource accessed.',
+      metadata: { method: req.method, path: req.path },
+    });
+  }
+  next();
+});
 
 // Lazy-initialized Gemini client
 let aiClient: GoogleGenAI | null = null;
@@ -46,6 +65,15 @@ app.get('/api/health', (req, res) => {
 
 // AI Command Core endpoint
 app.post('/api/gemini/command', async (req, res) => {
+  appendSecurityEvent({
+    eventType:'AGENT_COMMAND_REQUEST',
+    severity:'LOW',
+    actorId:typeof req.header('x-actor-id')==='string'?req.header('x-actor-id')||undefined:undefined,
+    agentId:'command-core',
+    sessionId:typeof req.header('x-session-id')==='string'?req.header('x-session-id')||undefined:undefined,
+    description:'Command Core received an agent/AI command request.',
+    metadata:{commandPresent:typeof req.body?.command==='string'},
+  });
   const { command, businessContext } = req.body;
   const prompt = command || 'Analyze current business health and anomalies';
 
@@ -398,6 +426,39 @@ app.post('/api/actions/rollback', async (req, res) => {
       error: error?.message || 'Rollback adapter rejected the reversal. The prior ledger event remains unchanged.',
     });
   }
+});
+
+// Security Layer API
+app.get('/api/security/status', (_req, res) => res.json({ success:true, status:getSecurityStatus(), events:getSecurityEvents().slice(0,80), incidents:detectIncidents() }));
+app.get('/api/security/events', (req, res) => {
+  const limit=Math.min(Math.max(Number(req.query.limit)||80,1),500);
+  const severity=typeof req.query.severity==='string'?req.query.severity:undefined;
+  res.json({success:true,events:getSecurityEvents().filter(e=>!severity||e.severity===severity).slice(0,limit)});
+});
+app.get('/api/security/integrity', (_req,res)=>{const integrity=getSecurityIntegrity();res.status(integrity.valid?200:503).json({success:integrity.valid,integrity});});
+app.get('/api/security/policies', (_req,res)=>res.json({success:true,policy:{authorization:'SERVER_AUTHORITATIVE',humanApprovalRequired:true,failClosed:true,executionModel:'AI_DECIDES != AI_EXECUTES'}}));
+app.get('/api/security/incidents', (_req,res)=>res.json({success:true,incidents:detectIncidents()}));
+app.post('/api/security/incidents/:incidentId/transition',(req,res)=>{
+ const {status,authorizedBy}=req.body??{};
+ if(!['ACKNOWLEDGED','CONTAINED','RESOLVED'].includes(status)||typeof authorizedBy!=='string'||!authorizedBy.trim())return res.status(400).json({success:false,error:'Valid status and authorizedBy required.'});
+ try{return res.json({success:true,incident:updateIncident(req.params.incidentId,status,authorizedBy)});}catch(error:any){return res.status(403).json({success:false,error:error?.message||'Incident transition denied.'});}
+});
+app.post('/api/security/operator-action',(req,res)=>{
+ const {action,targetResource,authorizedBy,humanApproval}=req.body??{};
+ const allowed=new Set(['acknowledge','deny','revoke','isolate','quarantine','investigate','rollback']);
+ if(!allowed.has(action)||typeof authorizedBy!=='string'||!authorizedBy.trim()||humanApproval!==true)return res.status(403).json({success:false,error:'Supported action, identity, and explicit human approval are required.'});
+ const event=appendSecurityEvent({eventType:'OPERATOR_SECURITY_ACTION_REQUESTED',severity:['isolate','quarantine','revoke'].includes(action)?'HIGH':'MEDIUM',actorId:authorizedBy,targetResource:typeof targetResource==='string'?targetResource:undefined,description:'Authorized operator requested security action: '+action,metadata:{action,humanApproval:true}});
+ return res.json({success:true,accepted:true,event});
+});
+app.post('/api/security/provenance/create',(req,res)=>{
+ const {subject,payload,source,authorizedBy}=req.body??{};
+ if(typeof subject!=='string'||typeof source!=='string'||payload===undefined||typeof authorizedBy!=='string')return res.status(400).json({success:false,error:'subject, payload, source, and authorizedBy are required.'});
+ return res.json({success:true,record:createProvenanceRecord({subject,payload,source,authorizedBy})});
+});
+app.post('/api/security/provenance/verify',(req,res)=>{
+ const {record,payload}=req.body??{};
+ if(!record||payload===undefined)return res.status(400).json({success:false,error:'record and payload are required.'});
+ const verification=verifyProvenanceRecord(record,payload);return res.status(verification.valid?200:409).json({success:verification.valid,verification});
 });
 
 // Production static file serving or Vite dev middleware
