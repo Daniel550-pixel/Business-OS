@@ -61,7 +61,7 @@ export const SpatialEntityPanel: React.FC<SpatialEntityPanelProps> = ({
       className="fixed right-4 top-20 bottom-16 z-40 w-96 max-w-[calc(100vw-2rem)] rounded-2xl bg-[#0b0f19]/95 backdrop-blur-xl border border-cyan-500/30 shadow-[0_12px_48px_rgba(0,0,0,0.85)] flex flex-col overflow-hidden animate-in slide-in-from-right duration-200"
     >
       {/* Panel Header */}
-      <div className="p-4 border-b border-white/[0.08] flex items-start justify-between bg-white/[0.02]">
+      <div className="p-4 border-b border-white/[0.07] flex items-start justify-between bg-white/[0.025]">
         <div className="space-y-1">
           <div className="flex items-center gap-2">
             <span
@@ -92,7 +92,7 @@ export const SpatialEntityPanel: React.FC<SpatialEntityPanelProps> = ({
         </div>
 
         {/* Relationship / Health Index */}
-        <div className="p-3 rounded-xl bg-white/[0.02] border border-white/[0.05] space-y-2">
+        <div className="p-3 rounded-xl bg-white/[0.025] border border-white/[0.05] space-y-2">
           <div className="flex items-center justify-between text-xs">
             <span className="text-slate-400">Health & Relationship</span>
             <span className="font-bold text-cyan-400">{entity.healthScore}%</span>
@@ -137,7 +137,7 @@ export const SpatialEntityPanel: React.FC<SpatialEntityPanelProps> = ({
               {entity.signals.map((sig, idx) => (
                 <div
                   key={idx}
-                  className="flex items-center justify-between p-2 rounded-lg bg-white/[0.02] border border-white/[0.04]"
+                  className="flex items-center justify-between p-2 rounded-lg bg-white/[0.025] border border-white/[0.04]"
                 >
                   <span className="text-slate-200">{sig.label}</span>
                   {sig.trend === 'up' ? (
@@ -185,7 +185,7 @@ export const SpatialEntityPanel: React.FC<SpatialEntityPanelProps> = ({
       </div>
 
       {/* Spatial Action Controls */}
-      <div className="p-3 border-t border-white/[0.08] bg-black/40 space-y-2">
+      <div className="p-3 border-t border-white/[0.07] bg-black/40 space-y-2">
         <button
           onClick={() => onInvestigate(entity)}
           className="w-full py-2 px-3 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white font-bold text-xs flex items-center justify-center gap-2 shadow-[0_0_16px_rgba(6,182,212,0.3)] transition-all"
@@ -197,7 +197,7 @@ export const SpatialEntityPanel: React.FC<SpatialEntityPanelProps> = ({
         {onQuickAction && entity.level === 'customer' && (
           <button
             onClick={() => onQuickAction(`Schedule Executive Concierge Sponsor for ${entity.name}`, entity)}
-            className="w-full py-1.5 px-3 rounded-xl bg-white/[0.05] hover:bg-white/[0.09] text-slate-300 text-xs flex items-center justify-center gap-1.5 border border-white/[0.08] transition-all"
+            className="w-full py-1.5 px-3 rounded-xl bg-white/[0.05] hover:bg-white/[0.09] text-slate-300 text-xs flex items-center justify-center gap-1.5 border border-white/[0.07] transition-all"
           >
             <ExternalLink className="w-3 h-3" />
             <span>Schedule Executive Touchpoint</span>
