@@ -113,12 +113,21 @@ export const CommandCore: React.FC<CommandCoreProps> = ({
     try {
       const marketSymbols = ['AAPL', 'NVDA', 'MSFT'];
       const marketQuotes = [];
+      let marketAnalysis = [];
+
       for (const symbol of marketSymbols) {
         try {
           const marketResponse = await fetch(`/api/market/quote?symbol=${symbol}`);
           if (!marketResponse.ok) continue;
           const marketPayload = await marketResponse.json();
           if (marketPayload?.success && marketPayload.data) marketQuotes.push(marketPayload.data);
+          try {
+            const analysisResponse = await fetch(`/api/market/analysis?symbol=${symbol}`);
+            const analysisPayload = await analysisResponse.json();
+            if (analysisPayload?.success && analysisPayload.data) marketAnalysis.push(analysisPayload.data);
+          } catch {
+            // Historical analysis is supplemental.
+          }
         } catch {
           // Market data is supplemental; intelligence remains available without it.
         }
@@ -142,6 +151,7 @@ export const CommandCore: React.FC<CommandCoreProps> = ({
               source: quote.source,
               latestTradingDay: quote.latestTradingDay,
             })),
+            marketAnalysis,
           },
         }),
       });
