@@ -3,6 +3,8 @@ import path from 'path';
 import { commitExecution, getExecutionById, getExecutionRecords, rollbackExecution } from './server/actionRuntime.js';
 import { GoogleGenAI, ThinkingLevel } from '@google/genai';
 import dotenv from 'dotenv';
+import { evaluateSecurityRequest, getSecurityIntegrity, getSecurityStatus, recordVerificationFailure, recordVerifiedExecution } from './server/security/securityKernel.js';
+import { getSecurityEvents } from './server/security/securityEvents.js';
 
 dotenv.config();
 
@@ -318,21 +320,15 @@ function evaluatePolicyGate(input: {
   requiresApproval: unknown;
   riskLevel: unknown;
 }) {
-  const allowedRisk = new Set(['low', 'medium', 'high']);
-  if (typeof input.actionId !== 'string' || typeof input.title !== 'string' || typeof input.targetSystem !== 'string') {
-    return 'Action identity is incomplete.';
-  }
-  if (!allowedRisk.has(String(input.riskLevel))) return 'Unsupported risk level.';
-  if (input.requiresApproval !== true || input.humanApproval !== true) return 'Explicit human approval is required.';
-  if (!input.parameters || typeof input.parameters !== 'object' || Array.isArray(input.parameters)) {
-    return 'Action parameters must be a JSON object.';
-  }
+  const security = evaluateSecurityRequest(input);
+  if (!security.allowed) return security.reason;
+
   const allowedTargets = (process.env.EXECUTION_ALLOWED_TARGETS || '')
     .split(',')
     .map((target) => target.trim())
     .filter(Boolean);
-  if (allowedTargets.length > 0 && !allowedTargets.includes(input.targetSystem)) {
-    return `Target system "${input.targetSystem}" is not allowlisted by Policy Gate.`;
+  if (allowedTargets.length > 0 && !allowedTargets.includes(String(input.targetSystem))) {
+    return `Target system "${String(input.targetSystem)}" is not allowlisted by Policy Gate.`;
   }
   return null;
 }
@@ -362,6 +358,9 @@ app.post('/api/actions/execute', async (req, res) => {
       parameters: parameters || {},
       idempotencyKey,
     });
+    if (!result.duplicate) {
+      recordVerifiedExecution(actionId, targetSystem);
+    }
     return res.json({
       success: true,
       duplicate: result.duplicate,
@@ -371,6 +370,9 @@ app.post('/api/actions/execute', async (req, res) => {
       executionRecord: result.record,
     });
   } catch (error: any) {
+    if (typeof actionId === 'string' && typeof targetSystem === 'string') {
+      recordVerificationFailure(actionId, targetSystem, error?.message || 'Execution adapter rejected the mutation.');
+    }
     return res.status(503).json({
       success: false,
       error: error?.message || 'Execution adapter rejected the mutation. No ledger commit was recorded.',
