@@ -24,6 +24,7 @@ body,
 
 html {
   color-scheme: dark;
+  scroll-behavior: smooth;
 }
 
 body {
@@ -436,7 +437,9 @@ body{
   position:relative;
   isolation:isolate;
   min-height:100dvh;
-  overflow:hidden;
+  overflow-x:hidden;
+  overflow-y:auto;
+  scroll-behavior:smooth;
   background:#000;
   font-family:'Plus Jakarta Sans','Sora',system-ui,-apple-system,'Segoe UI',sans-serif;
 }

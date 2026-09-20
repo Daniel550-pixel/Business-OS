@@ -306,7 +306,7 @@ export const BusinessWorld: React.FC<BusinessWorldProps> = ({
         </button>
 
         {showInspector && active && (
-          <aside className="absolute right-4 top-20 z-25 w-72 rounded-2xl border border-white/10 bg-[#0b1018]/92 backdrop-blur-2xl shadow-2xl overflow-hidden">
+          <aside className="absolute right-4 top-20 z-25 w-72 max-h-[calc(100%-6rem)] overflow-y-auto rounded-2xl border border-white/10 bg-[#0b1018]/92 backdrop-blur-2xl shadow-2xl">
             <div className="px-4 py-3 border-b border-white/10 flex items-center justify-between">
               <div>
                 <div className="text-[9px] font-mono text-cyan-300">SPATIAL INSPECTOR</div>
