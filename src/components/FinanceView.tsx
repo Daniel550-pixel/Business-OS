@@ -20,6 +20,7 @@ import {
   RotateCcw,
 } from 'lucide-react';
 import { BusinessMetric } from '../types';
+import { MarketHistoryPanel } from './MarketHistoryPanel';
 
 interface FinanceViewProps {
   metrics?: BusinessMetric[];
@@ -145,6 +146,8 @@ export const FinanceView: React.FC<FinanceViewProps> = ({ onTriggerAction }) => 
           )}
         </div>
       </div>
+
+      <MarketHistoryPanel />
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
         {/* Panel 1 (Col 1-5): FINANCIAL TOPOLOGY Network Graph */}
