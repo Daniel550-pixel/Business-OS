@@ -307,6 +307,20 @@ User Request: ${prompt}`,
   res.json({ success: true, source: 'offline-intelligence-core', data: result });
 });
 
+// Server-side execution ledger: records are authoritative for the current runtime.
+const executionLedger = new Map<string, {
+  executionId: string;
+  actionId: string;
+  title: string;
+  targetSystem: string;
+  authorizedBy: string;
+  timestamp: string;
+  status: 'COMMITTED' | 'ROLLED_BACK';
+  verification: string;
+  parameters: Record<string, unknown>;
+  auditHash: string;
+}>();
+
 // Action Execution endpoint (implements AI DECIDES != AI EXECUTES)
 app.post('/api/actions/execute', (req, res) => {
   const { actionId, title, targetSystem, authorizedBy, parameters, humanApproval } = req.body ?? {};
@@ -331,11 +345,28 @@ app.post('/api/actions/execute', (req, res) => {
     auditHash,
   };
 
+  executionLedger.set(executionRecord.executionId, executionRecord);
   res.json({
     success: true,
     message: `Action "${title}" safely verified by Policy Gate and executed.`,
     executionRecord,
   });
+});
+
+app.post('/api/actions/rollback', (req, res) => {
+  const { executionId, humanApproval } = req.body ?? {};
+  if (!executionId || humanApproval !== true) {
+    return res.status(400).json({ success: false, error: 'Rollback requires an execution ID and explicit human approval.' });
+  }
+  const record = executionLedger.get(executionId);
+  if (!record) return res.status(404).json({ success: false, error: 'Execution record not found.' });
+  if (record.status !== 'COMMITTED') return res.status(409).json({ success: false, error: 'Execution is not currently committed.' });
+
+  const rollbackTimestamp = new Date().toISOString();
+  const rollbackHash = crypto.createHash('sha256').update(JSON.stringify({ executionId, actionId: record.actionId, status: 'ROLLED_BACK', rollbackTimestamp })).digest('hex');
+  const rolledBack = { ...record, status: 'ROLLED_BACK' as const, verification: 'VERIFIED_ROLLBACK_POLICY', auditHash: rollbackHash };
+  executionLedger.set(executionId, rolledBack);
+  res.json({ success: true, executionRecord: rolledBack });
 });
 
 // Production static file serving or Vite dev middleware
