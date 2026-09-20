@@ -127,6 +127,43 @@ export async function getDailySeries(symbolInput: string, outputSize: 'compact' 
   });
 }
 
+export type MarketAnalysis = {
+  symbol: string;
+  trend: 'BULLISH' | 'BEARISH' | 'MIXED';
+  changePercent: number;
+  volatilityPercent: number;
+  sma20: number | null;
+  sma50: number | null;
+  anomaly: boolean;
+  anomalyScore: number;
+  analyzedAt: string;
+};
+
+export function analyzeDailySeries(symbolInput: string, series: DailyPoint[]): MarketAnalysis {
+  const symbol = normalizeSymbol(symbolInput);
+  const ordered = [...series].sort((a, b) => a.date.localeCompare(b.date));
+  const closes = ordered.map(p => p.close).filter(Number.isFinite);
+  if (closes.length < 2) throw new Error(`Insufficient historical data for ${symbol}.`);
+
+  const last = closes[closes.length - 1];
+  const first = closes[0];
+  const changePercent = ((last - first) / first) * 100;
+  const returns = closes.slice(1).map((v, i) => (v - closes[i]) / closes[i]).filter(Number.isFinite);
+  const mean = returns.reduce((a, b) => a + b, 0) / Math.max(returns.length, 1);
+  const variance = returns.reduce((sum, r) => sum + (r - mean) ** 2, 0) / Math.max(returns.length, 1);
+  const volatilityPercent = Math.sqrt(variance) * 100;
+  const sma = (n: number) => closes.length < n ? null : closes.slice(-n).reduce((a,b)=>a+b,0)/n;
+  const sma20 = sma(20);
+  const sma50 = sma(50);
+  const baseline = returns.slice(-20);
+  const latestReturn = returns[returns.length - 1];
+  const baselineMean = baseline.reduce((a,b)=>a+b,0)/Math.max(baseline.length,1);
+  const baselineStd = Math.sqrt(baseline.reduce((s,r)=>s+(r-baselineMean)**2,0)/Math.max(baseline.length,1));
+  const anomalyScore = baselineStd > 0 ? Math.abs((latestReturn-baselineMean)/baselineStd) : 0;
+  const trend = sma20 == null ? (changePercent >= 0 ? 'BULLISH' : 'BEARISH') : last > sma20 && changePercent >= 0 ? 'BULLISH' : last < sma20 && changePercent < 0 ? 'BEARISH' : 'MIXED';
+  return { symbol, trend, changePercent, volatilityPercent, sma20, sma50, anomaly: anomalyScore >= 2.5, anomalyScore, analyzedAt: new Date().toISOString() };
+}
+
 export function marketDataFingerprint(symbol: string, quote: MarketQuote) {
   return createHash('sha256')
     .update(JSON.stringify({ symbol, quote }))
