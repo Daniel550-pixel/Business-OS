@@ -208,6 +208,8 @@ export const CommandCore: React.FC<CommandCoreProps> = ({
           className="relative flex items-center"
         >
           <input
+            id="command-core-input"
+            name="command"
             type="text"
             value={inputQuery}
             onChange={(e) => setInputQuery(e.target.value)}
