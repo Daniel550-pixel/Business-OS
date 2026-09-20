@@ -125,6 +125,32 @@ export const BusinessWorld: React.FC<BusinessWorldProps> = ({
   const onSelectNodeRef = useRef(onSelectNode);
   const onQuickInspectNodeRef = useRef(onQuickInspectNode);
 
+  const [marketPulse, setMarketPulse] = useState<{ symbol: string; price: number; changePercent: number }[]>([]);
+
+  useEffect(() => {
+    let cancelled = false;
+    const loadMarketPulse = async () => {
+      try {
+        const symbols = ['AAPL', 'NVDA', 'MSFT'];
+        const quotes: { symbol: string; price: number; changePercent: number }[] = [];
+        for (const symbol of symbols) {
+          const response = await fetch(`/api/market/quote?symbol=${symbol}`);
+          if (!response.ok) continue;
+          const payload = await response.json();
+          if (payload?.success && payload.data) {
+            quotes.push({ symbol: payload.data.symbol, price: payload.data.price, changePercent: payload.data.changePercent });
+          }
+        }
+        if (!cancelled) setMarketPulse(quotes);
+      } catch {
+        if (!cancelled) setMarketPulse([]);
+      }
+    };
+    void loadMarketPulse();
+    const timer = window.setInterval(loadMarketPulse, 60_000);
+    return () => { cancelled = true; window.clearInterval(timer); };
+  }, []);
+
   const entities = useMemo<Entity3D[]>(() => {
     const source = nodes.length ? nodes : FALLBACK_ENTITIES;
     return source.slice(0, 12).map((n, i) => ({
@@ -370,6 +396,25 @@ export const BusinessWorld: React.FC<BusinessWorldProps> = ({
           <button onClick={resetCamera} className="p-2 rounded-lg hover:bg-white/10 text-slate-300" title="Reset camera"><RotateCcw size={15}/></button>
         </div>
       </header>
+
+      <div className="absolute right-5 top-[88px] z-20 w-[250px] rounded-2xl border border-white/10 bg-[#050a12]/78 backdrop-blur-2xl shadow-[0_18px_60px_rgba(0,0,0,.38)]">
+        <div className="px-4 py-3 border-b border-white/[0.07] flex items-center justify-between">
+          <div><div className="text-[9px] font-mono tracking-[0.18em] text-cyan-300">MARKET TELEMETRY</div><div className="mt-1 text-sm font-semibold text-white">External pulse</div></div>
+          <span className="text-[8px] font-mono text-emerald-300">ALPHA VANTAGE</span>
+        </div>
+        <div className="p-3 grid grid-cols-3 gap-2">
+          {marketPulse.map((quote) => (
+            <div key={quote.symbol} className="rounded-lg bg-white/[0.03] border border-white/[0.06] p-2">
+              <div className="text-[9px] font-mono text-slate-400">{quote.symbol}</div>
+              <div className="mt-1 text-[11px] font-mono text-cyan-200">${quote.price.toFixed(2)}</div>
+              <div className={`mt-0.5 text-[8px] font-mono ${quote.changePercent >= 0 ? 'text-emerald-300' : 'text-rose-300'}`}>
+                {quote.changePercent >= 0 ? '+' : ''}{quote.changePercent.toFixed(2)}%
+              </div>
+            </div>
+          ))}
+          {marketPulse.length === 0 && <div className="col-span-3 text-[9px] font-mono text-slate-500">External market pulse unavailable.</div>}
+        </div>
+      </div>
 
       <div className="absolute left-5 top-[88px] z-20 w-[250px] rounded-2xl border border-white/10 bg-[#050a12]/78 backdrop-blur-2xl shadow-[0_18px_60px_rgba(0,0,0,.38)]">
         <div className="px-4 py-3 border-b border-white/[0.07]">
