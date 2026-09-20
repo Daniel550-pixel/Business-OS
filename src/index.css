@@ -1,1 +1,210 @@
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
 @import "tailwindcss";
+
+:root {
+  --os-bg: #0A0C10;
+  --os-panel: #12161F;
+  --os-surface: #1A202C;
+  --os-border: rgba(255, 255, 255, 0.08);
+  --os-accent: #00F0FF;
+  --os-blue: #2D61FF;
+  --os-purple: #A855F7;
+  --os-amber: #F59E0B;
+  --os-red: #EF4444;
+  --os-emerald: #10B981;
+}
+
+html,
+body,
+#root {
+  min-height: 100%;
+  background: var(--os-bg);
+}
+
+html {
+  color-scheme: dark;
+}
+
+body {
+  margin: 0;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  color: #e2e8f0;
+  overflow-x: hidden;
+  background:
+    radial-gradient(circle at 50% -10%, rgba(45, 97, 255, 0.08), transparent 35%),
+    var(--os-bg);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+button,
+input,
+textarea,
+select {
+  font: inherit;
+}
+
+::selection {
+  background: rgba(0, 240, 255, 0.28);
+  color: #fff;
+}
+
+::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+
+::-webkit-scrollbar-track {
+  background: #0A0C10;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #1E2638;
+  border-radius: 2px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #2D61FF;
+}
+
+/* Business-OS visual language */
+.os-mono {
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.os-glass {
+  background: rgba(18, 22, 31, 0.75);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+}
+
+.os-glass-strong {
+  background: rgba(11, 14, 20, 0.9);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+}
+
+.os-surface {
+  background: linear-gradient(180deg, rgba(26, 32, 44, 0.82), rgba(18, 22, 31, 0.88));
+  border: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+.os-interactive {
+  transition:
+    border-color 180ms ease,
+    background-color 180ms ease,
+    box-shadow 180ms ease,
+    transform 180ms ease;
+}
+
+.os-interactive:hover {
+  border-color: rgba(0, 240, 255, 0.28);
+  background: rgba(26, 32, 44, 0.9);
+  box-shadow: 0 8px 28px -12px rgba(0, 240, 255, 0.18);
+}
+
+.os-grid {
+  background-size: 32px 32px;
+  background-image:
+    linear-gradient(to right, rgba(255, 255, 255, 0.025) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.025) 1px, transparent 1px);
+}
+
+.os-grid-fine {
+  background-size: 16px 16px;
+  background-image:
+    linear-gradient(to right, rgba(255, 255, 255, 0.018) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.018) 1px, transparent 1px);
+}
+
+.os-cyber-corners {
+  position: relative;
+}
+
+.os-cyber-corners::before,
+.os-cyber-corners::after {
+  content: '';
+  position: absolute;
+  width: 7px;
+  height: 7px;
+  pointer-events: none;
+}
+
+.os-cyber-corners::before {
+  top: 0;
+  left: 0;
+  border-top: 1px solid var(--os-accent);
+  border-left: 1px solid var(--os-accent);
+}
+
+.os-cyber-corners::after {
+  right: 0;
+  bottom: 0;
+  border-right: 1px solid var(--os-accent);
+  border-bottom: 1px solid var(--os-accent);
+}
+
+.os-scanlines {
+  position: relative;
+  isolation: isolate;
+}
+
+.os-scanlines::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 20;
+  opacity: 0.08;
+  background: repeating-linear-gradient(
+    to bottom,
+    transparent 0,
+    transparent 3px,
+    rgba(255, 255, 255, 0.22) 4px
+  );
+  mix-blend-mode: overlay;
+}
+
+.os-live-dot {
+  box-shadow: 0 0 10px rgba(16, 185, 129, 0.75);
+}
+
+.os-ai-glow {
+  box-shadow: 0 0 24px rgba(168, 85, 247, 0.14);
+}
+
+.os-command-glow {
+  box-shadow: 0 0 24px rgba(0, 240, 255, 0.12);
+}
+
+@keyframes os-pulse-ring {
+  0%, 100% { transform: scale(1); opacity: 0.32; }
+  50% { transform: scale(1.12); opacity: 0.08; }
+}
+
+.os-pulse-ring {
+  animation: os-pulse-ring 2.8s ease-in-out infinite;
+}
+
+@keyframes os-data-flow {
+  from { stroke-dashoffset: 24; }
+  to { stroke-dashoffset: 0; }
+}
+
+.os-data-flow {
+  stroke-dasharray: 4 8;
+  animation: os-data-flow 1.4s linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+  }
+}
