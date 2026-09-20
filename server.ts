@@ -2,6 +2,7 @@ import express from 'express';
 import path from 'path';
 import { commitExecution, getExecutionById, getExecutionRecords, rollbackExecution } from './server/actionRuntime.js';
 import { GoogleGenAI, ThinkingLevel } from '@google/genai';
+import { getDailySeries, getGlobalQuote, getMarketDataStatus } from './server/marketData.js';
 import dotenv from 'dotenv';
 
 dotenv.config();
@@ -38,8 +39,37 @@ app.get('/api/health', (req, res) => {
     environment: process.env.NODE_ENV || 'development',
     geminiConfigured: !!(process.env.GEMINI_API_KEY && process.env.GEMINI_API_KEY !== 'MY_GEMINI_API_KEY'),
     timestamp: new Date().toISOString(),
-    dataMode: 'SIMULATED',
+    dataMode: getMarketDataStatus().mode,
+    marketData: getMarketDataStatus(),
   });
+});
+
+// Market data endpoints. Alpha Vantage remains server-side; API credentials never reach the browser.
+app.get('/api/market/status', (_req, res) => {
+  res.json({ success: true, marketData: getMarketDataStatus() });
+});
+
+app.get('/api/market/quote', async (req, res) => {
+  try {
+    const symbol = typeof req.query.symbol === 'string' ? req.query.symbol : '';
+    if (!symbol) return res.status(400).json({ success: false, error: 'A market symbol is required.' });
+    const quote = await getGlobalQuote(symbol);
+    return res.json({ success: true, data: quote });
+  } catch (error: any) {
+    return res.status(502).json({ success: false, error: error?.message || 'Market quote unavailable.' });
+  }
+});
+
+app.get('/api/market/time-series', async (req, res) => {
+  try {
+    const symbol = typeof req.query.symbol === 'string' ? req.query.symbol : '';
+    const outputSize = req.query.outputsize === 'full' ? 'full' : 'compact';
+    if (!symbol) return res.status(400).json({ success: false, error: 'A market symbol is required.' });
+    const data = await getDailySeries(symbol, outputSize);
+    return res.json({ success: true, symbol: symbol.toUpperCase(), outputSize, source: 'alphavantage', data });
+  } catch (error: any) {
+    return res.status(502).json({ success: false, error: error?.message || 'Market time series unavailable.' });
+  }
 });
 
 // AI Command Core endpoint
