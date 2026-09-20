@@ -276,7 +276,7 @@ export default function App() {
       />
 
       {/* Main Content Viewport */}
-      <main className="flex-1 max-w-[1600px] w-full mx-auto p-4 sm:p-6 lg:p-8 space-y-6">
+      <main className="flex-1 w-full min-w-0 p-3 sm:p-4 lg:p-5 space-y-5 os-grid os-scanlines">
         {/* If Executive Mode is explicitly toggled, present the High-Density Executive Cockpit */}
         {operatingMode === 'executive' ? (
           <ExecutiveCockpit
