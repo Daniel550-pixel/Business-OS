@@ -65,7 +65,7 @@ export const DigitalTwinHierarchy: React.FC<DigitalTwinHierarchyProps> = ({
   return (
     <div className="space-y-6">
       {/* Hierarchy Navigation Header */}
-      <div className="rounded-2xl bg-[#080b12] border border-white/[0.08] p-5 shadow-[0_8px_32px_rgba(0,0,0,0.6)] space-y-4">
+      <div className="rounded-xl os-surface border border-white/[0.07] p-5 shadow-[0_8px_32px_rgba(0,0,0,0.6)] space-y-4">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
           <div className="space-y-1">
             <div className="flex items-center gap-2">
@@ -109,7 +109,7 @@ export const DigitalTwinHierarchy: React.FC<DigitalTwinHierarchyProps> = ({
                 className={`p-3 rounded-xl border text-left transition-all ${
                   isSelected
                     ? 'bg-cyan-950/40 border-cyan-500/60 shadow-[0_0_16px_rgba(6,182,212,0.25)]'
-                    : 'bg-white/[0.02] border-white/[0.06] hover:border-white/10'
+                    : 'bg-white/[0.025] border-white/[0.06] hover:border-white/10'
                 }`}
               >
                 <div className="flex items-center justify-between">
@@ -169,7 +169,7 @@ export const DigitalTwinHierarchy: React.FC<DigitalTwinHierarchyProps> = ({
                   ? 'border-rose-500/50 hover:border-rose-500'
                   : isWarning
                   ? 'border-amber-500/40 hover:border-amber-500/70'
-                  : 'border-white/[0.08] hover:border-cyan-500/50'
+                  : 'border-white/[0.07] hover:border-cyan-500/50'
               }`}
             >
               {/* Card Header */}
@@ -227,7 +227,7 @@ export const DigitalTwinHierarchy: React.FC<DigitalTwinHierarchyProps> = ({
                   {entity.signals.slice(0, 2).map((sig, i) => (
                     <div
                       key={i}
-                      className="flex items-center justify-between text-[11px] font-mono text-slate-300 px-2 py-1 rounded bg-white/[0.02]"
+                      className="flex items-center justify-between text-[11px] font-mono text-slate-300 px-2 py-1 rounded bg-white/[0.025]"
                     >
                       <span className="truncate pr-2">{sig.label}</span>
                       {sig.trend === 'up' ? (
