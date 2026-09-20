@@ -33,6 +33,46 @@ export const FinanceView: React.FC<FinanceViewProps> = ({ onTriggerAction }) => 
   const [capexVal, setCapexVal] = useState<number>(20);
   const [activeTooltip, setActiveTooltip] = useState<string | null>('tool_1');
 
+  const [marketQuotes, setMarketQuotes] = useState<Array<{
+    symbol: string;
+    price: number;
+    change: number;
+    changePercent: number;
+    latestTradingDay: string;
+  }>>([]);
+  const [marketSource, setMarketSource] = useState<'Alpha Vantage' | 'SIMULATED'>('SIMULATED');
+  const [marketLoading, setMarketLoading] = useState(true);
+
+  React.useEffect(() => {
+    let cancelled = false;
+    const loadMarket = async () => {
+      setMarketLoading(true);
+      try {
+        const statusResponse = await fetch('/api/market/status');
+        const status = await statusResponse.json();
+        if (!cancelled) setMarketSource(status?.marketData?.source === 'Alpha Vantage' ? 'Alpha Vantage' : 'SIMULATED');
+        const symbols = ['AAPL', 'NVDA', 'MSFT'];
+        const results = [];
+        for (const symbol of symbols) {
+          const response = await fetch(`/api/market/quote?symbol=${symbol}`);
+          if (!response.ok) continue;
+          const payload = await response.json();
+          if (payload?.success && payload.data) results.push(payload.data);
+        }
+        if (!cancelled) setMarketQuotes(results);
+      } catch {
+        if (!cancelled) {
+          setMarketSource('SIMULATED');
+          setMarketQuotes([]);
+        }
+      } finally {
+        if (!cancelled) setMarketLoading(false);
+      }
+    };
+    void loadMarket();
+    return () => { cancelled = true; };
+  }, []);
+
   return (
     <div className="relative w-full min-h-[calc(100vh-100px)] bg-[#07090e] border border-white/[0.08] rounded-2xl overflow-hidden flex flex-col font-sans select-none space-y-4 p-4 lg:p-5">
       {/* Top Header Bar (Screenshot 4) */}
@@ -69,6 +109,43 @@ export const FinanceView: React.FC<FinanceViewProps> = ({ onTriggerAction }) => 
       </div>
 
       {/* Top Grid: Financial Topology + Cashflow Projection Simulation + AI Evidence Trail */}
+      {/* External market intelligence surface */}
+      <div className="rounded-2xl bg-[#090d16]/90 border border-white/[0.08] p-4 shadow-xl">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-3">
+          <div>
+            <div className="text-xs font-bold font-mono text-white tracking-wider uppercase">MARKET INTELLIGENCE</div>
+            <div className="text-[10px] font-mono text-slate-500 mt-1">External market telemetry / server-routed data</div>
+          </div>
+          <div className="flex items-center gap-2 text-[10px] font-mono">
+            <span className={`w-1.5 h-1.5 rounded-full ${marketSource === 'Alpha Vantage' ? 'bg-emerald-400' : 'bg-amber-400'}`} />
+            <span className={marketSource === 'Alpha Vantage' ? 'text-emerald-400' : 'text-amber-300'}>{marketSource.toUpperCase()}</span>
+            <span className="text-slate-600">•</span>
+            <span className="text-slate-500">{marketLoading ? 'SYNCING' : marketQuotes.length ? 'LIVE QUOTES' : 'NO QUOTES'}</span>
+          </div>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+          {marketQuotes.map((quote) => (
+            <div key={quote.symbol} className="p-3 rounded-xl bg-black/40 border border-white/[0.06]">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-mono font-bold text-white">{quote.symbol}</span>
+                <span className={`text-[10px] font-mono ${quote.changePercent >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+                  {quote.changePercent >= 0 ? '+' : ''}{quote.changePercent.toFixed(2)}%
+                </span>
+              </div>
+              <div className="mt-2 text-lg font-bold font-mono text-cyan-300">${quote.price.toFixed(2)}</div>
+              <div className="text-[10px] font-mono text-slate-500 mt-1">
+                {quote.change >= 0 ? '+' : ''}{quote.change.toFixed(2)} / trading day {quote.latestTradingDay}
+              </div>
+            </div>
+          ))}
+          {!marketLoading && marketQuotes.length === 0 && (
+            <div className="md:col-span-3 p-3 rounded-xl bg-amber-950/20 border border-amber-500/20 text-[11px] font-mono text-amber-300">
+              External market telemetry unavailable. Finance surface remains in simulated mode.
+            </div>
+          )}
+        </div>
+      </div>
+
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
         {/* Panel 1 (Col 1-5): FINANCIAL TOPOLOGY Network Graph */}
         <div className="lg:col-span-5 rounded-2xl bg-[#090d16]/90 border border-white/[0.08] p-4 flex flex-col justify-between shadow-xl relative overflow-hidden min-h-[360px]">
