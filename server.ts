@@ -1,7 +1,7 @@
 import express from 'express';
 import path from 'path';
 import { commitExecution, getExecutionById, getExecutionRecords, rollbackExecution } from './server/actionRuntime.js';
-import { GoogleGenAI } from '@google/genai';
+import { GoogleGenAI, ThinkingLevel } from '@google/genai';
 import dotenv from 'dotenv';
 
 dotenv.config();
@@ -96,7 +96,7 @@ User Request: ${prompt}`,
         config: {
           systemInstruction,
           responseMimeType: 'application/json',
-          thinkingConfig: { thinkingLevel: 'medium' },
+          thinkingConfig: { thinkingLevel: ThinkingLevel.MEDIUM },
         },
       });
 
