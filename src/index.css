@@ -1,3 +1,4 @@
+@import url('https://fonts.googleapis.com/css2?family=Sora:wght@100..900&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
 @import "tailwindcss";
 
@@ -392,3 +393,29 @@ select {
   75% { height: 95%; }
 }
 
+
+
+/* NEURAL-inspired cinematic Business-OS surface */
+:root{
+  --neural-ink:#fff;
+  --neural-sub:#a2a9b8;
+  --neural-hair:rgba(196,214,232,.22);
+}
+body{
+  font-family:'Sora',system-ui,-apple-system,'Segoe UI',sans-serif;
+  text-rendering:geometricPrecision;
+}
+.neural-type{font-family:'Sora',system-ui,-apple-system,'Segoe UI',sans-serif}
+.neural-glass{
+  background:linear-gradient(180deg,rgba(255,255,255,.075),rgba(255,255,255,.025));
+  border:1px solid rgba(196,214,232,.16);
+  -webkit-backdrop-filter:blur(26px) saturate(.65);
+  backdrop-filter:blur(26px) saturate(.65);
+  box-shadow:0 24px 80px rgba(0,0,0,.34),inset 0 1px 0 rgba(255,255,255,.12);
+}
+.neural-rule{
+  background:linear-gradient(180deg,rgba(186,200,214,.45),rgba(206,220,232,.85),rgba(182,198,212,.45));
+}
+@media (prefers-reduced-motion:reduce){
+  video{animation:none!important}
+}
