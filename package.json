@@ -10,7 +10,7 @@
     "preview": "vite preview",
     "clean": "node -e \"const fs=require('fs'); for (const p of ['dist','server.js']) fs.rmSync(p,{recursive:true,force:true})\"",
     "lint": "tsc --noEmit",
-    "test": "tsx tests/runtime-integrity.test.ts && tsx tests/security-layer.test.ts && tsx tests/security-runtime-v2.test.ts",
+    "test": "tsx tests/runtime-integrity.test.ts && tsx tests/security-layer.test.ts && tsx tests/security-runtime-v2.test.ts && tsx tests/security-v3.test.ts",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
