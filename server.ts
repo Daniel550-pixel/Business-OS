@@ -2,7 +2,7 @@ import express from 'express';
 import path from 'path';
 import { commitExecution, getExecutionById, getExecutionRecords, rollbackExecution } from './server/actionRuntime.js';
 import { GoogleGenAI, ThinkingLevel } from '@google/genai';
-import { getDailySeries, getGlobalQuote, getMarketDataStatus } from './server/marketData.js';
+import { analyzeDailySeries, getDailySeries, getGlobalQuote, getMarketDataStatus } from './server/marketData.js';
 import dotenv from 'dotenv';
 
 dotenv.config();
@@ -57,6 +57,17 @@ app.get('/api/market/quote', async (req, res) => {
     return res.json({ success: true, data: quote });
   } catch (error: any) {
     return res.status(502).json({ success: false, error: error?.message || 'Market quote unavailable.' });
+  }
+});
+
+app.get('/api/market/analysis', async (req, res) => {
+  try {
+    const symbol = typeof req.query.symbol === 'string' ? req.query.symbol : '';
+    if (!symbol) return res.status(400).json({ success: false, error: 'A market symbol is required.' });
+    const series = await getDailySeries(symbol, 'compact');
+    return res.json({ success: true, data: analyzeDailySeries(symbol, series), source: 'alphavantage' });
+  } catch (error: any) {
+    return res.status(502).json({ success: false, error: error?.message || 'Market analysis unavailable.' });
   }
 });
 
