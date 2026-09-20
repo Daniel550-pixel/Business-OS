@@ -549,10 +549,6 @@ export default function App() {
             </div>
 
             {/* View: Security Layer — authoritative security telemetry surface */}
-            {activeView === 'cyber-hud' && (
-              <SecurityHUD />
-            )}
-
             {/* View: Business World & Digital Twin Hierarchy */}
             {activeView === 'cyber-hud' && (
               <CyberHUDView
