@@ -1,5 +1,6 @@
 import express from 'express';
 import path from 'path';
+import crypto from 'crypto';
 import { fileURLToPath } from 'url';
 import { GoogleGenAI } from '@google/genai';
 import dotenv from 'dotenv';
@@ -312,18 +313,26 @@ User Request: ${prompt}`,
 
 // Action Execution endpoint (implements AI DECIDES != AI EXECUTES)
 app.post('/api/actions/execute', (req, res) => {
-  const { actionId, title, targetSystem, authorizedBy, parameters } = req.body;
+  const { actionId, title, targetSystem, authorizedBy, parameters, humanApproval } = req.body ?? {};
+  if (!actionId || !title || !targetSystem || !authorizedBy || humanApproval !== true) {
+    return res.status(400).json({ success: false, error: 'Policy Gate requires a complete action and explicit human approval.' });
+  }
+
+  const timestamp = new Date().toISOString();
+  const canonical = JSON.stringify({ actionId, title, targetSystem, authorizedBy, parameters: parameters || {}, timestamp });
+  const auditHash = crypto.createHash('sha256').update(canonical).digest('hex');
+
   const executionRecord = {
-    executionId: `exec_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
+    executionId: `exec_${crypto.randomUUID()}`,
     actionId,
-    title: title || 'System Action',
-    targetSystem: targetSystem || 'Enterprise Gateway',
-    authorizedBy: authorizedBy || 'Executive User',
-    timestamp: new Date().toISOString(),
+    title,
+    targetSystem,
+    authorizedBy,
+    timestamp,
     status: 'COMMITTED',
     verification: 'VERIFIED_DETERMINISTIC_POLICY',
     parameters: parameters || {},
-    auditHash: `sha256_${Math.random().toString(36).substring(2, 12)}`,
+    auditHash,
   };
 
   res.json({
