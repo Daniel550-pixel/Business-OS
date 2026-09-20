@@ -58,7 +58,7 @@ export const AIIntelligenceLayer: React.FC<AIIntelligenceLayerProps> = ({
   ];
 
   return (
-    <div className="rounded-2xl bg-[#090d18]/90 border border-cyan-500/30 shadow-[0_4px_24px_rgba(6,182,212,0.12)] overflow-hidden transition-all">
+    <div className="rounded-2xl bg-[#12161F]/90 os-glass border border-cyan-500/30 shadow-[0_4px_24px_rgba(6,182,212,0.12)] overflow-hidden transition-all">
       {/* Top Banner Bar */}
       <div className="p-3 px-4 flex items-center justify-between border-b border-white/[0.06] bg-white/[0.01]">
         <div className="flex items-center gap-3">
@@ -107,7 +107,7 @@ export const AIIntelligenceLayer: React.FC<AIIntelligenceLayerProps> = ({
                     className={`p-2 rounded-xl border text-center transition-all cursor-pointer ${
                       step.active
                         ? 'bg-cyan-950/30 border-cyan-500/50 shadow-[0_0_12px_rgba(6,182,212,0.15)] text-white'
-                        : 'bg-white/[0.02] border-white/[0.05] text-slate-500'
+                        : 'bg-white/[0.025] border-white/[0.05] text-slate-500'
                     }`}
                   >
                     <div className="text-[11px] font-bold">{step.name}</div>
