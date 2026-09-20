@@ -1,0 +1,6 @@
+{
+  "name": "Business OS",
+  "description": "Next-generation AI-native business command platform and operating environment featuring a live Business World Model, agent orchestration, autonomous investigations, and policy-gated execution.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
