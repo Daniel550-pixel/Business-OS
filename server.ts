@@ -16,6 +16,22 @@ const PORT = 3000;
 
 app.use(express.json());
 
+app.use((req, _res, next) => {
+  const ignored = req.path === '/api/health' || req.path.startsWith('/api/security/');
+  if (!ignored && req.path.startsWith('/api/')) {
+    appendSecurityEvent({
+      eventType: 'API_ACCESS',
+      severity: req.method === 'POST' ? 'LOW' : 'INFO',
+      actorId: typeof req.header('x-actor-id') === 'string' ? req.header('x-actor-id') || undefined : undefined,
+      sessionId: typeof req.header('x-session-id') === 'string' ? req.header('x-session-id') || undefined : undefined,
+      targetResource: req.path,
+      description: 'API resource accessed.',
+      metadata: { method: req.method, path: req.path },
+    });
+  }
+  next();
+});
+
 // Lazy-initialized Gemini client
 let aiClient: GoogleGenAI | null = null;
 function getGeminiClient(): GoogleGenAI | null {
@@ -49,6 +65,15 @@ app.get('/api/health', (req, res) => {
 
 // AI Command Core endpoint
 app.post('/api/gemini/command', async (req, res) => {
+  appendSecurityEvent({
+    eventType:'AGENT_COMMAND_REQUEST',
+    severity:'LOW',
+    actorId:typeof req.header('x-actor-id')==='string'?req.header('x-actor-id')||undefined:undefined,
+    agentId:'command-core',
+    sessionId:typeof req.header('x-session-id')==='string'?req.header('x-session-id')||undefined:undefined,
+    description:'Command Core received an agent/AI command request.',
+    metadata:{commandPresent:typeof req.body?.command==='string'},
+  });
   const { command, businessContext } = req.body;
   const prompt = command || 'Analyze current business health and anomalies';
 
