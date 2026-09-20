@@ -53,9 +53,9 @@ export const AIActivityStream: React.FC<AIActivityStreamProps> = ({
   };
 
   return (
-    <div className="rounded-2xl bg-[#080b12] border border-white/[0.08] shadow-[0_8px_30px_rgba(0,0,0,0.6)] overflow-hidden">
+    <div className="rounded-xl os-surface border border-white/[0.07] shadow-[0_12px_40px_rgba(0,0,0,0.42)] overflow-hidden">
       {/* Stream Header */}
-      <div className="p-3.5 border-b border-white/[0.06] flex items-center justify-between bg-white/[0.02]">
+      <div className="p-3.5 border-b border-white/[0.06] flex items-center justify-between bg-white/[0.025]">
         <div className="flex items-center gap-2.5">
           <div className="p-1 rounded-md bg-cyan-500/20 text-cyan-400">
             <Activity className="w-3.5 h-3.5" />
