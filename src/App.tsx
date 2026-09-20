@@ -258,11 +258,29 @@ export default function App() {
     }
   };
 
-  const handleRollback = (recordId: string) => {
-    setExecutionRecords((prev) =>
-      prev.map((r) => (r.id === recordId ? { ...r, status: 'ROLLED_BACK', reversible: false } : r))
-    );
-    showToast('State reconciled: Rollback snapshot restored successfully.');
+  const handleRollback = async (recordId: string) => {
+    try {
+      const response = await fetch('/api/actions/rollback', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ executionId: recordId, humanApproval: true }),
+      });
+      const payload = await response.json();
+      if (!response.ok || !payload.success || !payload.executionRecord) {
+        throw new Error(payload.error || 'Rollback failed');
+      }
+      setExecutionRecords((prev) =>
+        prev.map((record) =>
+          record.id === recordId
+            ? { ...record, status: 'ROLLED_BACK', reversible: false, hash: payload.executionRecord.auditHash }
+            : record
+        )
+      );
+      showToast('State reconciled: rollback verified by Policy Gate.');
+    } catch (error) {
+      console.error('Rollback failed:', error);
+      showToast('Rollback rejected. The committed execution record was not changed.');
+    }
   };
 
   const handleCreateMission = (newMission: Partial<Mission>) => {
