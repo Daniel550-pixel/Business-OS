@@ -60,7 +60,6 @@ import {
   ProposedAction,
   ExecutionRecord,
 } from './types';
-import { BUSINESS_DATA_MODE } from './data/runtimeState';
 
 export default function App() {
   useEffect(() => {
