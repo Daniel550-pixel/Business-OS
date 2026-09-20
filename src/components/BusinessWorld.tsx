@@ -374,8 +374,8 @@ export const BusinessWorld: React.FC<BusinessWorldProps> = ({
       <div className="absolute left-5 bottom-5 z-20 flex flex-col gap-1">
         <button onClick={()=>zoom(-4)} className="p-2 rounded-lg border border-white/10 bg-[#0b1018]/90 text-slate-300 hover:text-white"><Plus size={15}/></button>
         <button onClick={()=>zoom(4)} className="p-2 rounded-lg border border-white/10 bg-[#0b1018]/90 text-slate-300 hover:text-white"><Minus size={15}/></button>
-        <button onClick={()=>{const c=sceneRef.current?.controls;if(c){c.getAzimuthalAngle();c.rotateLeft(.35);}}} className="p-2 rounded-lg border border-white/10 bg-[#0b1018]/90 text-slate-300 hover:text-white"><RotateCcw size={15}/></button>
-        <button onClick={()=>{const c=sceneRef.current?.controls;if(c)c.rotateLeft(-.35);}} className="p-2 rounded-lg border border-white/10 bg-[#0b1018]/90 text-slate-300 hover:text-white"><Scan size={15}/></button>
+        <button onClick={()=>{const world=sceneRef.current;if(world){const offset=world.camera.position.clone().sub(world.controls.target).applyAxisAngle(new THREE.Vector3(0,1,0),.35);world.camera.position.copy(world.controls.target).add(offset);world.camera.lookAt(world.controls.target);}}} className="p-2 rounded-lg border border-white/10 bg-[#0b1018]/90 text-slate-300 hover:text-white"><RotateCcw size={15}/></button>
+        <button onClick={()=>{const world=sceneRef.current;if(world){const offset=world.camera.position.clone().sub(world.controls.target).applyAxisAngle(new THREE.Vector3(0,1,0),-.35);world.camera.position.copy(world.controls.target).add(offset);world.camera.lookAt(world.controls.target);}}} className="p-2 rounded-lg border border-white/10 bg-[#0b1018]/90 text-slate-300 hover:text-white"><Scan size={15}/></button>
       </div>
 
       {showLegend&&<div className="absolute left-[68px] bottom-5 z-20 p-3 rounded-xl border border-white/10 bg-[#050a12]/72 backdrop-blur-xl text-[9px] font-mono text-slate-400">
