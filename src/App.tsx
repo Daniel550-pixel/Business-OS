@@ -201,41 +201,59 @@ export default function App() {
     setSystemState('major_decision');
   };
 
-  const handleConfirmActionExecution = (action: ProposedAction) => {
-    // 1. Remove from pending actions
-    setPendingActions((prev) => prev.filter((a) => a.id !== action.id));
+  const handleConfirmActionExecution = async (action: ProposedAction) => {
+    try {
+      const response = await fetch('/api/actions/execute', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          actionId: action.id,
+          title: action.title,
+          targetSystem: action.targetSystem,
+          authorizedBy: 'Executive Operator (You)',
+          parameters: action.parameters || {},
+          humanApproval: true,
+        }),
+      });
+      const payload = await response.json();
+      if (!response.ok || !payload.success || !payload.executionRecord) {
+        throw new Error(payload.error || 'Policy Gate execution failed');
+      }
 
-    // 2. Append to immutable execution ledger
-    const newRecord: ExecutionRecord = {
-      id: `exec_${Date.now()}`,
-      actionTitle: action.title,
-      targetSystem: action.targetSystem,
-      authorizedBy: 'Executive Operator (You)',
-      timestamp: 'Just now',
-      status: 'COMMITTED',
-      reversible: true,
-      hash: `0x${Math.random().toString(16).substring(2, 10)}...${Math.random().toString(16).substring(2, 6)}`,
-    };
-    setExecutionRecords((prev) => [newRecord, ...prev]);
+      const serverRecord = payload.executionRecord;
+      const newRecord: ExecutionRecord = {
+        id: serverRecord.executionId,
+        actionTitle: serverRecord.title,
+        targetSystem: serverRecord.targetSystem,
+        authorizedBy: serverRecord.authorizedBy,
+        timestamp: serverRecord.timestamp,
+        status: serverRecord.status,
+        reversible: true,
+        hash: serverRecord.auditHash,
+      };
 
-    // 3. Log tick to live AI stream
-    setActivityTicks((prev) => [
-      {
-        id: `tick_${Date.now()}`,
-        timestamp: new Date().toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' }),
-        agentName: 'POLICY GATE',
-        agentRole: 'Cryptographic Authorizer',
-        action: `authorized and executed immutable mutation: "${action.title}"`,
-        target: action.targetSystem,
-        category: 'policy_gate',
-        confidence: 100,
-      },
-      ...prev,
-    ]);
-
-    setApprovalAction(null);
-    setSystemState('mission_executing');
-    showToast(`Committed mutation: "${action.title}" via Policy Gate`);
+      setPendingActions((prev) => prev.filter((a) => a.id !== action.id));
+      setExecutionRecords((prev) => [newRecord, ...prev]);
+      setActivityTicks((prev) => [
+        {
+          id: `tick_${Date.now()}`,
+          timestamp: new Date().toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' }),
+          agentName: 'POLICY GATE',
+          agentRole: 'Cryptographic Authorizer',
+          action: `authorized and executed immutable mutation: "${action.title}"`,
+          target: action.targetSystem,
+          category: 'policy_gate',
+          confidence: 100,
+        },
+        ...prev,
+      ]);
+      setApprovalAction(null);
+      setSystemState('mission_executing');
+      showToast(`Committed mutation: "${action.title}" via Policy Gate`);
+    } catch (error) {
+      console.error('Policy Gate execution failed:', error);
+      showToast('Policy Gate rejected the execution. No mutation was committed.');
+    }
   };
 
   const handleRollback = (recordId: string) => {
