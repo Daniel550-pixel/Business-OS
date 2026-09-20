@@ -118,6 +118,11 @@ export const BusinessWorld: React.FC<BusinessWorldProps> = ({
   const [tick, setTick] = useState(0);
   const [showLegend, setShowLegend] = useState(true);
   const [showInspector, setShowInspector] = useState(true);
+  const selectedIdRef = useRef(selectedId);
+  const entitiesRef = useRef<Entity3D[]>([]);
+  const nodesRef = useRef<WorldNode[]>([]);
+  const onSelectNodeRef = useRef(onSelectNode);
+  const onQuickInspectNodeRef = useRef(onQuickInspectNode);
 
   const entities = useMemo<Entity3D[]>(() => {
     const source = nodes.length ? nodes : FALLBACK_ENTITIES;
@@ -133,6 +138,14 @@ export const BusinessWorld: React.FC<BusinessWorldProps> = ({
   useEffect(() => {
     if (selectedNode?.id) setSelectedId(selectedNode.id);
   }, [selectedNode?.id]);
+
+  useEffect(() => {
+    selectedIdRef.current = selectedId;
+    entitiesRef.current = entities;
+    nodesRef.current = nodes;
+    onSelectNodeRef.current = onSelectNode;
+    onQuickInspectNodeRef.current = onQuickInspectNode;
+  }, [selectedId, entities, nodes, onSelectNode, onQuickInspectNode]);
 
   useEffect(() => {
     const mount = mountRef.current;
@@ -290,7 +303,7 @@ export const BusinessWorld: React.FC<BusinessWorldProps> = ({
       renderer.domElement.remove();
       sceneRef.current=null;
     };
-  }, [entities, lookup, nodes, onQuickInspectNode, onSelectNode]);
+  }, []);
 
   useEffect(()=>{
     const world=sceneRef.current;
