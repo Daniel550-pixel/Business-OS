@@ -5,7 +5,7 @@ import {
 } from 'lucide-react';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
-import { WorldNode, ProposedAction, HierarchyEntity } from '../types';
+import { WorldNode, ProposedAction, HierarchyEntity, AIActivityTick, TemporalEpoch } from '../types';
 import { BUSINESS_DATA_MODE } from '../data/runtimeState';
 
 interface BusinessWorldProps {
@@ -17,6 +17,9 @@ interface BusinessWorldProps {
   onExecutePolicyAction?: (action: ProposedAction) => void;
   hierarchyEntities?: HierarchyEntity[];
   systemState?: string;
+  activityTicks?: AIActivityTick[];
+  currentEpoch?: TemporalEpoch;
+  onEpochChange?: (epoch: TemporalEpoch) => void;
 }
 
 type Entity3D = WorldNode & { position: [number, number, number] };
@@ -111,7 +114,7 @@ function makeEdge(a: THREE.Vector3, b: THREE.Vector3, color = 0x4bdcff) {
 }
 
 export const BusinessWorld: React.FC<BusinessWorldProps> = ({
-  nodes = [], selectedNode, onSelectNode, highlightedNodeIds = [], onQuickInspectNode, onExecutePolicyAction, hierarchyEntities = [], systemState = 'idle',
+  nodes = [], selectedNode, onSelectNode, highlightedNodeIds = [], onQuickInspectNode, onExecutePolicyAction, hierarchyEntities = [], systemState = 'idle', activityTicks = [], currentEpoch = 'NOW', onEpochChange,
 }) => {
   const mountRef = useRef<HTMLDivElement>(null);
   const sceneRef = useRef<{ scene:THREE.Scene; camera:THREE.PerspectiveCamera; renderer:THREE.WebGLRenderer; controls:OrbitControls; groups:Map<string,THREE.Group>; agents:THREE.Mesh[]; clock:THREE.Clock } | null>(null);
@@ -122,7 +125,7 @@ export const BusinessWorld: React.FC<BusinessWorldProps> = ({
   const [showLegend, setShowLegend] = useState(true);
   const [showInspector, setShowInspector] = useState(true);
   const [securityTelemetry, setSecurityTelemetry] = useState<{state:string;eventCount:number;incidentCount:number;ledgerValid:boolean}>({state:'OFFLINE',eventCount:0,incidentCount:0,ledgerValid:false});
-  const hierarchySource = hierarchyEntities.length ? hierarchyEntities : [];
+  const hierarchySource = hierarchyEntities;
   const hierarchyWorldNodes = useMemo<WorldNode[]>(() => {
     if (!hierarchySource.length) return [];
     return hierarchySource.map((e, i) => {
@@ -179,7 +182,7 @@ export const BusinessWorld: React.FC<BusinessWorldProps> = ({
   const onQuickInspectNodeRef = useRef(onQuickInspectNode);
 
   const entities = useMemo<Entity3D[]>(() => {
-    const source = hierarchyWorldNodes.length ? hierarchyWorldNodes : (nodes.length ? nodes : FALLBACK_ENTITIES);
+    const source = hierarchyWorldNodes.length ? hierarchyWorldNodes : nodes;
     return source.slice(0, 24).map((n, i) => {
       const sourceEntity = hierarchySource.find(e => e.id === n.id);
       const level = sourceEntity?.level || 'company';
@@ -205,6 +208,13 @@ export const BusinessWorld: React.FC<BusinessWorldProps> = ({
     : AGENTS.length;
 
   const active = entities.find(e => e.id === selectedId) || entities[0];
+  const epochOrder: TemporalEpoch[] = ['JAN','FEB','MAR','APR','MAY','JUN','NOW','SIM_3M','SIM_6M'];
+  const activityByAgent = useMemo(() => {
+    const map = new Map<string, AIActivityTick>();
+    activityTicks.forEach(t => map.set(t.agentName, t));
+    return map;
+  }, [activityTicks]);
+  const temporalIndex = Math.max(0, epochOrder.indexOf(currentEpoch));
   const lookup = useMemo(() => new Map(entities.map(e => [e.id, e])), [entities]);
 
   useEffect(() => {
@@ -298,12 +308,15 @@ export const BusinessWorld: React.FC<BusinessWorldProps> = ({
     });
 
     const liveAgentNames = Array.from(new Set(
-      hierarchySource.flatMap(e => e.activeAgents || [])
+      activityTicks.length
+        ? activityTicks.map(t => t.agentName).filter(Boolean)
+        : hierarchySource.flatMap(e => e.activeAgents || [])
     ));
     const agentDefinitions = liveAgentNames.length
       ? liveAgentNames.map((name, i) => {
-          const owned = hierarchySource.find(e => e.activeAgents?.includes(name));
-          const target = hierarchySource.find(e => e.ownerAgent === name) || owned;
+          const tick = activityByAgent.get(name);
+          const target = hierarchySource.find(e => e.id === tick?.entityId) || hierarchySource.find(e => e.ownerAgent === name);
+          const owned = target?.parentId ? hierarchySource.find(e => e.id === target.parentId) : target;
           return {
             id: name.toLowerCase().replace(/[^a-z0-9]+/g,'-'),
             name,
@@ -361,9 +374,11 @@ export const BusinessWorld: React.FC<BusinessWorldProps> = ({
         if(core) core.rotation.y=t*.18;
       });
       agentDefinitions.forEach((agent,i)=>{
-        const A=lookup.get(agent.from),B=lookup.get(agent.to),mesh=agents[i];
+        const tick = activityByAgent.get(agent.name);
+        const dynamicFrom = tick?.entityId && lookup.has(tick.entityId) ? (lookup.get(tick.entityId)?.connections[0] || agent.from) : agent.from;
+        const A=lookup.get(dynamicFrom) || lookup.get(agent.from),B=lookup.get(tick?.entityId || agent.to) || lookup.get(agent.to),mesh=agents[i];
         if(!A||!B) return;
-        const u=(t*(.09+i*.012))%1;
+        const u=((t*(.09+i*.012)) + (temporalIndex * .035))%1;
         mesh.position.lerpVectors(new THREE.Vector3(...A.position).setY(3.4),new THREE.Vector3(...B.position).setY(3.4),u);
       });
       renderer.render(scene,camera);
@@ -393,7 +408,7 @@ export const BusinessWorld: React.FC<BusinessWorldProps> = ({
       renderer.domElement.remove();
       sceneRef.current=null;
     };
-  }, [entities, hierarchySource]);
+  }, [entities, hierarchySource, activityTicks, activityByAgent, temporalIndex]);
 
   useEffect(()=>{
     const world=sceneRef.current;
@@ -441,6 +456,20 @@ export const BusinessWorld: React.FC<BusinessWorldProps> = ({
     return()=>window.clearInterval(id);
   },[playing]);
 
+  useEffect(()=>{
+    if(!simulation || !playing || !onEpochChange) return;
+    const id=window.setInterval(()=>{
+      const next = epochOrder[(epochOrder.indexOf(currentEpoch) + 1) % epochOrder.length];
+      onEpochChange(next);
+    }, 3500);
+    return()=>window.clearInterval(id);
+  },[simulation,playing,currentEpoch,onEpochChange]);
+
+  const changeEpoch=(delta:number)=>{
+    const nextIndex=Math.min(epochOrder.length-1,Math.max(0,temporalIndex+delta));
+    onEpochChange?.(epochOrder[nextIndex]);
+  };
+
   return (
     <section className="relative w-full min-h-[720px] h-[calc(100vh-235px)] overflow-hidden rounded-[28px] border border-white/[0.09] bg-[#02060f] os-cyber-corners os-scanlines">
       <div className="absolute inset-0 z-0" ref={mountRef} aria-label="Interactive three-dimensional business world" />
@@ -455,7 +484,10 @@ export const BusinessWorld: React.FC<BusinessWorldProps> = ({
           <span className={`px-2 py-0.5 rounded border text-[9px] font-mono ${securityTelemetry.ledgerValid?'border-emerald-400/30 text-emerald-300':'border-rose-400/40 text-rose-300'}`}>SECURITY {securityTelemetry.state}</span>
         </div>
         <div className="flex items-center gap-1">
-          <button onClick={()=>setPlaying(v=>!v)} className="p-2 rounded-lg hover:bg-white/10 text-slate-300" title={playing?'Pause telemetry':'Resume telemetry'}>{playing?<Pause size={15}/>:<Play size={15}/>}</button>
+          <button onClick={()=>changeEpoch(-1)} className="px-2 py-1.5 rounded-lg border border-white/10 text-[9px] font-mono text-slate-400 hover:text-white">−TIME</button>
+          <span className="px-2 py-1.5 rounded-lg border border-cyan-400/20 text-[9px] font-mono text-cyan-200">{currentEpoch}</span>
+          <button onClick={()=>changeEpoch(1)} className="px-2 py-1.5 rounded-lg border border-white/10 text-[9px] font-mono text-slate-400 hover:text-white">+TIME</button>
+          <button onClick={()=>setPlaying(v=>!v) className="p-2 rounded-lg hover:bg-white/10 text-slate-300" title={playing?'Pause telemetry':'Resume telemetry'}>{playing?<Pause size={15}/>:<Play size={15}/>}</button>
           <button onClick={()=>setSimulation(v=>!v)} className={`px-2.5 py-1.5 rounded-lg border text-[10px] font-mono ${simulation?'border-violet-400/40 text-violet-300':'border-white/10 text-slate-400'}`}>SIM</button>
           <button onClick={resetCamera} className="p-2 rounded-lg hover:bg-white/10 text-slate-300" title="Reset camera"><RotateCcw size={15}/></button>
         </div>
@@ -498,7 +530,7 @@ export const BusinessWorld: React.FC<BusinessWorldProps> = ({
       {!showInspector&&active&&<button onClick={()=>setShowInspector(true)} className="absolute right-4 top-20 z-20 p-2 rounded-lg border border-white/10 bg-[#0b1018]/90 text-slate-300"><ChevronDown size={15}/></button>}
 
       <footer className="absolute bottom-0 left-0 right-0 z-30 h-10 px-4 flex items-center justify-between border-t border-white/[0.07] bg-[#090d15]/90 backdrop-blur-xl text-[9px] font-mono">
-        <div className="flex items-center gap-4 text-slate-500"><span>ENTITIES <b className="text-slate-300">{entities.length}</b></span><span>AI AGENTS <b className="text-cyan-300">{agentCount}</b></span><span>RENDER <b className="text-emerald-300">WEBGL</b></span>{simulation&&<span className="text-violet-300">SIMULATION DELTA: +8.7% ARR</span>}</div>
+        <div className="flex items-center gap-4 text-slate-500"><span>TIME <b className="text-cyan-300">{currentEpoch}</b></span><span>ENTITIES <b className="text-slate-300">{entities.length}</b></span><span>AI AGENTS <b className="text-cyan-300">{agentCount}</b></span><span>RENDER <b className="text-emerald-300">WEBGL</b></span>{simulation&&<span className="text-violet-300">SIMULATION DELTA: +8.7% ARR</span>}</div>
         <div className="flex items-center gap-3 text-slate-500"><span>SEC EVENTS <b className="text-cyan-300">{securityTelemetry.eventCount}</b></span><span>INCIDENTS <b className={securityTelemetry.incidentCount?'text-rose-300':'text-emerald-300'}>{securityTelemetry.incidentCount}</b></span><span className={securityTelemetry.ledgerValid?'text-emerald-300':'text-rose-300'}>LEDGER {securityTelemetry.ledgerValid?'VERIFIED':'CHECK'}</span><Target size={11}/> TICK {String(tick).padStart(6,'0')} <Sparkles size={11} className="text-cyan-300"/></div>
       </footer>
     </section>
