@@ -598,6 +598,9 @@ export default function App() {
                     highlightedNodeIds={highlightedNodeIds}
                     hierarchyEntities={initialHierarchyEntities}
                     systemState={systemState}
+                    activityTicks={activityTicks}
+                    currentEpoch={currentEpoch}
+                    onEpochChange={handleEpochChange}
                     onExecutePolicyAction={handleOpenActionApproval}
                     onQuickInspectNode={(nodeId) => {
                       if (nodeId === 'sales') setActiveView('sales');
