@@ -596,6 +596,7 @@ export default function App() {
                     selectedNode={selectedNode}
                     onSelectNode={setSelectedNode}
                     highlightedNodeIds={highlightedNodeIds}
+                    onExecutePolicyAction={handleOpenActionApproval}
                     onQuickInspectNode={(nodeId) => {
                       if (nodeId === 'sales') setActiveView('sales');
                       else if (nodeId === 'revenue') setActiveView('finance');
