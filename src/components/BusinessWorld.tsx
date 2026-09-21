@@ -5,7 +5,7 @@ import {
 } from 'lucide-react';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
-import { WorldNode, ProposedAction, HierarchyEntity, AIActivityTick, TemporalEpoch } from '../types';
+import { WorldNode, ProposedAction, HierarchyEntity, AIActivityTick, TemporalEpoch, ExecutionRecord } from '../types';
 import { BUSINESS_DATA_MODE } from '../data/runtimeState';
 
 interface BusinessWorldProps {
@@ -20,6 +20,7 @@ interface BusinessWorldProps {
   activityTicks?: AIActivityTick[];
   currentEpoch?: TemporalEpoch;
   onEpochChange?: (epoch: TemporalEpoch) => void;
+  executionRecords?: ExecutionRecord[];
 }
 
 type Entity3D = WorldNode & { position: [number, number, number] };
@@ -105,7 +106,7 @@ function makeEdge(a: THREE.Vector3, b: THREE.Vector3, color = 0x4bdcff) {
 }
 
 export const BusinessWorld: React.FC<BusinessWorldProps> = ({
-  nodes = [], selectedNode, onSelectNode, highlightedNodeIds = [], onQuickInspectNode, onExecutePolicyAction, hierarchyEntities = [], systemState = 'idle', activityTicks = [], currentEpoch = 'NOW', onEpochChange,
+  nodes = [], selectedNode, onSelectNode, highlightedNodeIds = [], onQuickInspectNode, onExecutePolicyAction, hierarchyEntities = [], systemState = 'idle', activityTicks = [], currentEpoch = 'NOW', onEpochChange, executionRecords = [],
 }) => {
   const mountRef = useRef<HTMLDivElement>(null);
   const sceneRef = useRef<{ scene:THREE.Scene; camera:THREE.PerspectiveCamera; renderer:THREE.WebGLRenderer; controls:OrbitControls; groups:Map<string,THREE.Group>; agents:THREE.Mesh[]; clock:THREE.Clock } | null>(null);
@@ -200,11 +201,37 @@ export const BusinessWorld: React.FC<BusinessWorldProps> = ({
 
   const active = entities.find(e => e.id === selectedId) || entities[0];
   const epochOrder: TemporalEpoch[] = ['JAN','FEB','MAR','APR','MAY','JUN','NOW','SIM_3M','SIM_6M'];
+  const [liveActivityTicks, setLiveActivityTicks] = useState<AIActivityTick[]>(activityTicks);
+  useEffect(() => setLiveActivityTicks(activityTicks), [activityTicks]);
+  useEffect(() => {
+    if (!playing || !hierarchySource.length) return;
+    const id = window.setInterval(() => {
+      const critical = hierarchySource.filter(e => e.status === 'critical' || e.signals?.some(s => s.type === 'risk')).sort((a,b) => a.healthScore-b.healthScore);
+      const target = critical[Math.floor(Date.now()/5000) % Math.max(1, critical.length)];
+      if (!target) return;
+      setLiveActivityTicks(prev => [{
+        id: `live_${Date.now()}`,
+        timestamp: new Date().toLocaleTimeString('en-US',{hour12:false}),
+        agentName: target.ownerAgent,
+        agentRole: 'Autonomous Investigation Agent',
+        action: `investigating active risk signal on ${target.name}`,
+        target: target.name,
+        category: 'reasoning',
+        confidence: Math.min(99, Math.max(72, target.healthScore + 8)),
+        entityId: target.id,
+      }, ...prev].slice(0, 24));
+    }, 5000);
+    return () => window.clearInterval(id);
+  }, [playing, hierarchySource]);
+  const committedEntityIds = useMemo(() => new Set(executionRecords.filter(r => r.status === 'COMMITTED').flatMap(r => {
+    const p = r.parameters || {};
+    return typeof p.worldEntity === 'string' ? [p.worldEntity] : [];
+  })), [executionRecords]);
   const activityByAgent = useMemo(() => {
     const map = new Map<string, AIActivityTick>();
-    activityTicks.forEach(t => map.set(t.agentName, t));
+    liveActivityTicks.forEach(t => map.set(t.agentName, t));
     return map;
-  }, [activityTicks]);
+  }, [liveActivityTicks]);
   const temporalIndex = Math.max(0, epochOrder.indexOf(currentEpoch));
   const lookup = useMemo(() => new Map(entities.map(e => [e.id, e])), [entities]);
 
@@ -299,8 +326,8 @@ export const BusinessWorld: React.FC<BusinessWorldProps> = ({
     });
 
     const liveAgentNames = Array.from(new Set(
-      activityTicks.length
-        ? activityTicks.map(t => t.agentName).filter(Boolean)
+      liveActivityTicks.length
+        ? liveActivityTicks.map(t => t.agentName).filter(Boolean)
         : hierarchySource.flatMap(e => e.activeAgents || [])
     ));
     const agentDefinitions = liveAgentNames.length
@@ -399,7 +426,7 @@ export const BusinessWorld: React.FC<BusinessWorldProps> = ({
       renderer.domElement.remove();
       sceneRef.current=null;
     };
-  }, [entities, hierarchySource, activityTicks, activityByAgent, temporalIndex]);
+  }, [entities, hierarchySource, liveActivityTicks, activityByAgent, temporalIndex]);
 
   useEffect(()=>{
     const world=sceneRef.current;
@@ -414,14 +441,14 @@ export const BusinessWorld: React.FC<BusinessWorldProps> = ({
       const ring=group.children[1] as THREE.Mesh;
       if(core.material instanceof THREE.MeshStandardMaterial){
         core.material.emissive.setHex(selected?0x6ff3ff:highlighted?0x9a70ff:color);
-        core.material.emissiveIntensity=selected?1.0:highlighted?.72:.38;
+        core.material.emissiveIntensity=committedEntityIds.has(id)?1.25:selected?1.0:highlighted?.72:.38;
       }
       if(ring.material instanceof THREE.MeshBasicMaterial){
         ring.material.color.setHex(selected?0x8fffff:highlighted?0xa77cff:color);
-        ring.material.opacity=selected?.95:.58;
+        ring.material.opacity=committedEntityIds.has(id)?1.0:selected?.95:.58;
       }
     });
-  }, [selectedId,highlightedNodeIds,entities]);
+  }, [selectedId,highlightedNodeIds,entities,committedEntityIds]);
 
   const resetCamera=()=>sceneRef.current?.controls.reset();
   const zoom=(delta:number)=>{
