@@ -596,6 +596,8 @@ export default function App() {
                     selectedNode={selectedNode}
                     onSelectNode={setSelectedNode}
                     highlightedNodeIds={highlightedNodeIds}
+                    hierarchyEntities={initialHierarchyEntities}
+                    systemState={systemState}
                     onExecutePolicyAction={handleOpenActionApproval}
                     onQuickInspectNode={(nodeId) => {
                       if (nodeId === 'sales') setActiveView('sales');
