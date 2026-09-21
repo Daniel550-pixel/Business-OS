@@ -5,7 +5,7 @@ import {
 } from 'lucide-react';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
-import { WorldNode, ProposedAction } from '../types';
+import { WorldNode, ProposedAction, HierarchyEntity } from '../types';
 import { BUSINESS_DATA_MODE } from '../data/runtimeState';
 
 interface BusinessWorldProps {
@@ -15,6 +15,8 @@ interface BusinessWorldProps {
   highlightedNodeIds?: string[];
   onQuickInspectNode?: (nodeId: string) => void;
   onExecutePolicyAction?: (action: ProposedAction) => void;
+  hierarchyEntities?: HierarchyEntity[];
+  systemState?: string;
 }
 
 type Entity3D = WorldNode & { position: [number, number, number] };
@@ -109,7 +111,7 @@ function makeEdge(a: THREE.Vector3, b: THREE.Vector3, color = 0x4bdcff) {
 }
 
 export const BusinessWorld: React.FC<BusinessWorldProps> = ({
-  nodes = [], selectedNode, onSelectNode, highlightedNodeIds = [], onQuickInspectNode, onExecutePolicyAction,
+  nodes = [], selectedNode, onSelectNode, highlightedNodeIds = [], onQuickInspectNode, onExecutePolicyAction, hierarchyEntities = [], systemState = 'idle',
 }) => {
   const mountRef = useRef<HTMLDivElement>(null);
   const sceneRef = useRef<{ scene:THREE.Scene; camera:THREE.PerspectiveCamera; renderer:THREE.WebGLRenderer; controls:OrbitControls; groups:Map<string,THREE.Group>; agents:THREE.Mesh[]; clock:THREE.Clock } | null>(null);
@@ -120,6 +122,35 @@ export const BusinessWorld: React.FC<BusinessWorldProps> = ({
   const [showLegend, setShowLegend] = useState(true);
   const [showInspector, setShowInspector] = useState(true);
   const [securityTelemetry, setSecurityTelemetry] = useState<{state:string;eventCount:number;incidentCount:number;ledgerValid:boolean}>({state:'OFFLINE',eventCount:0,incidentCount:0,ledgerValid:false});
+  const hierarchySource = hierarchyEntities.length ? hierarchyEntities : [];
+  const hierarchyWorldNodes = useMemo<WorldNode[]>(() => {
+    if (!hierarchySource.length) return [];
+    return hierarchySource.map((e, i) => {
+      const status = e.status === 'critical' ? 'critical' : e.status === 'warning' ? 'warning' : e.status === 'optimal' ? 'optimal' : 'active';
+      return {
+        id: e.id,
+        label: e.name,
+        type: e.level === 'customer' ? 'customers' : e.level === 'transaction' ? 'finance' : e.level === 'division' ? 'systems' : e.level === 'operation' ? 'operations' : 'systems',
+        metric: e.revenueOrMetric,
+        subMetric: e.metricLabel,
+        status,
+        x: 0, y: 0,
+        description: e.summary,
+        details: {
+          keyDrivers: e.signals?.map(s => s.label) || [],
+          riskScore: Math.max(0, 100 - e.healthScore),
+          headcountOrCapacity: e.headcountOrCapacity,
+          activeAnomalies: e.signals?.filter(s => s.type === 'risk').length || 0,
+          ownerAgent: e.ownerAgent,
+        },
+        connections: [
+          ...(e.parentId ? [e.parentId] : []),
+          ...hierarchySource.filter(child => child.parentId === e.id).map(child => child.id),
+        ],
+      };
+    });
+  }, [hierarchySource]);
+
   useEffect(() => {
     let active = true;
     const loadSecurity = async () => {
@@ -148,12 +179,26 @@ export const BusinessWorld: React.FC<BusinessWorldProps> = ({
   const onQuickInspectNodeRef = useRef(onQuickInspectNode);
 
   const entities = useMemo<Entity3D[]>(() => {
-    const source = nodes.length ? nodes : FALLBACK_ENTITIES;
-    return source.slice(0, 12).map((n, i) => ({
-      ...n,
-      position: POSITIONS[n.id] || [((i % 4) - 1.5) * 9, 2, Math.floor(i / 4) * 10 - 8],
-    }));
-  }, [nodes]);
+    const source = hierarchyWorldNodes.length ? hierarchyWorldNodes : (nodes.length ? nodes : FALLBACK_ENTITIES);
+    return source.slice(0, 24).map((n, i) => {
+      const sourceEntity = hierarchySource.find(e => e.id === n.id);
+      const level = sourceEntity?.level || 'company';
+      const levelIndex = level === 'company' ? 0 : level === 'division' ? 1 : level === 'operation' ? 2 : level === 'customer' ? 3 : 4;
+      const levelItems = source.filter(item => {
+        const entity = hierarchySource.find(e => e.id === item.id);
+        return (entity?.level || 'company') === level;
+      });
+      const localIndex = Math.max(0, levelItems.findIndex(item => item.id === n.id));
+      const radius = levelIndex === 0 ? 0 : 9 + levelIndex * 5;
+      const angle = levelIndex === 0 ? 0 : (localIndex / Math.max(1, levelItems.length)) * Math.PI * 2 - Math.PI / 2;
+      const position: [number,number,number] = POSITIONS[n.id] || [
+        Math.cos(angle) * radius,
+        levelIndex === 0 ? 4 : 2 + levelIndex * .45,
+        Math.sin(angle) * radius,
+      ];
+      return { ...n, position };
+    });
+  }, [nodes, hierarchyWorldNodes]);
 
   const active = entities.find(e => e.id === selectedId) || entities[0];
   const lookup = useMemo(() => new Map(entities.map(e => [e.id, e])), [entities]);
@@ -235,10 +280,12 @@ export const BusinessWorld: React.FC<BusinessWorldProps> = ({
       scene.add(g);
     });
 
-    const edgePairs = [
-      ['core','revenue'],['core','finance'],['core','sales'],['core','operations'],
-      ['sales','customers'],['revenue','customers'],['finance','operations'],
-    ];
+    const edgePairs = hierarchySource.length
+      ? hierarchySource.filter(e => e.parentId).map(e => [e.parentId as string, e.id])
+      : [
+        ['core','revenue'],['core','finance'],['core','sales'],['core','operations'],
+        ['sales','customers'],['revenue','customers'],['finance','operations'],
+      ];
     edgePairs.forEach(([a,b]) => {
       const A=lookup.get(a), B=lookup.get(b);
       if (!A || !B) return;
@@ -246,8 +293,24 @@ export const BusinessWorld: React.FC<BusinessWorldProps> = ({
       scene.add(line);
     });
 
+    const liveAgentNames = Array.from(new Set(
+      hierarchySource.flatMap(e => e.activeAgents || [])
+    ));
+    const agentDefinitions = liveAgentNames.length
+      ? liveAgentNames.map((name, i) => {
+          const owned = hierarchySource.find(e => e.activeAgents?.includes(name));
+          const target = hierarchySource.find(e => e.ownerAgent === name) || owned;
+          return {
+            id: name.toLowerCase().replace(/[^a-z0-9]+/g,'-'),
+            name,
+            from: owned?.id || hierarchySource[0]?.id || 'core',
+            to: target?.id || hierarchySource[0]?.id || 'core',
+            color: [0x63e6ff,0x63f5ae,0xb98cff,0xffc85a,0xff7ab6][i % 5],
+          };
+        })
+      : AGENTS;
     const agents: THREE.Mesh[] = [];
-    AGENTS.forEach(agent => {
+    agentDefinitions.forEach(agent => {
       const sphere = new THREE.Mesh(
         new THREE.SphereGeometry(.34,20,20),
         new THREE.MeshBasicMaterial({ color:agent.color })
@@ -293,7 +356,7 @@ export const BusinessWorld: React.FC<BusinessWorldProps> = ({
         const core=g.children[0];
         if(core) core.rotation.y=t*.18;
       });
-      AGENTS.forEach((agent,i)=>{
+      agentDefinitions.forEach((agent,i)=>{
         const A=lookup.get(agent.from),B=lookup.get(agent.to),mesh=agents[i];
         if(!A||!B) return;
         const u=(t*(.09+i*.012))%1;
@@ -326,7 +389,7 @@ export const BusinessWorld: React.FC<BusinessWorldProps> = ({
       renderer.domElement.remove();
       sceneRef.current=null;
     };
-  }, [entities]);
+  }, [entities, hierarchySource]);
 
   useEffect(()=>{
     const world=sceneRef.current;
@@ -384,7 +447,7 @@ export const BusinessWorld: React.FC<BusinessWorldProps> = ({
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-2 text-white font-semibold text-sm tracking-[0.18em]"><Layers3 className="w-4 h-4 text-cyan-200"/>BUSINESS-OS</div>
           <span className="hidden sm:inline text-[9px] font-mono tracking-[0.16em] text-slate-400/80">3D BUSINESS WORLD / DIGITAL TWIN</span>
-          <span className={`px-2 py-0.5 rounded border text-[9px] font-mono ${simulation?'border-violet-400/50 text-violet-300 bg-violet-500/10':'border-emerald-400/40 text-emerald-300 bg-emerald-500/10'}`}>{simulation?'FUTURE SIMULATION':BUSINESS_DATA_MODE === 'SIMULATED' ? 'SIMULATED TELEMETRY' : 'LIVE TELEMETRY'}</span>
+          <span className={`px-2 py-0.5 rounded border text-[9px] font-mono ${simulation?'border-violet-400/50 text-violet-300 bg-violet-500/10':'border-emerald-400/40 text-emerald-300 bg-emerald-500/10'}`}>{simulation?'FUTURE SIMULATION':systemState === 'mission_executing' ? 'MISSION EXECUTING':systemState === 'major_decision' ? 'POLICY GATE':systemState === 'investigating' ? 'AI INVESTIGATING':BUSINESS_DATA_MODE === 'SIMULATED' ? 'SIMULATED TELEMETRY' : 'LIVE TELEMETRY'}</span>
           <span className={`px-2 py-0.5 rounded border text-[9px] font-mono ${securityTelemetry.ledgerValid?'border-emerald-400/30 text-emerald-300':'border-rose-400/40 text-rose-300'}`}>SECURITY {securityTelemetry.state}</span>
         </div>
         <div className="flex items-center gap-1">
@@ -431,7 +494,7 @@ export const BusinessWorld: React.FC<BusinessWorldProps> = ({
       {!showInspector&&active&&<button onClick={()=>setShowInspector(true)} className="absolute right-4 top-20 z-20 p-2 rounded-lg border border-white/10 bg-[#0b1018]/90 text-slate-300"><ChevronDown size={15}/></button>}
 
       <footer className="absolute bottom-0 left-0 right-0 z-30 h-10 px-4 flex items-center justify-between border-t border-white/[0.07] bg-[#090d15]/90 backdrop-blur-xl text-[9px] font-mono">
-        <div className="flex items-center gap-4 text-slate-500"><span>ENTITIES <b className="text-slate-300">{entities.length}</b></span><span>AI AGENTS <b className="text-cyan-300">{AGENTS.length}</b></span><span>RENDER <b className="text-emerald-300">WEBGL</b></span>{simulation&&<span className="text-violet-300">SIMULATION DELTA: +8.7% ARR</span>}</div>
+        <div className="flex items-center gap-4 text-slate-500"><span>ENTITIES <b className="text-slate-300">{entities.length}</b></span><span>AI AGENTS <b className="text-cyan-300">{agentDefinitions.length}</b></span><span>RENDER <b className="text-emerald-300">WEBGL</b></span>{simulation&&<span className="text-violet-300">SIMULATION DELTA: +8.7% ARR</span>}</div>
         <div className="flex items-center gap-3 text-slate-500"><span>SEC EVENTS <b className="text-cyan-300">{securityTelemetry.eventCount}</b></span><span>INCIDENTS <b className={securityTelemetry.incidentCount?'text-rose-300':'text-emerald-300'}>{securityTelemetry.incidentCount}</b></span><span className={securityTelemetry.ledgerValid?'text-emerald-300':'text-rose-300'}>LEDGER {securityTelemetry.ledgerValid?'VERIFIED':'CHECK'}</span><Target size={11}/> TICK {String(tick).padStart(6,'0')} <Sparkles size={11} className="text-cyan-300"/></div>
       </footer>
     </section>
