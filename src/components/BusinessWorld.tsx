@@ -200,6 +200,10 @@ export const BusinessWorld: React.FC<BusinessWorldProps> = ({
     });
   }, [nodes, hierarchyWorldNodes]);
 
+  const agentCount = hierarchySource.length
+    ? new Set(hierarchySource.flatMap(e => e.activeAgents || [])).size
+    : AGENTS.length;
+
   const active = entities.find(e => e.id === selectedId) || entities[0];
   const lookup = useMemo(() => new Map(entities.map(e => [e.id, e])), [entities]);
 
@@ -494,7 +498,7 @@ export const BusinessWorld: React.FC<BusinessWorldProps> = ({
       {!showInspector&&active&&<button onClick={()=>setShowInspector(true)} className="absolute right-4 top-20 z-20 p-2 rounded-lg border border-white/10 bg-[#0b1018]/90 text-slate-300"><ChevronDown size={15}/></button>}
 
       <footer className="absolute bottom-0 left-0 right-0 z-30 h-10 px-4 flex items-center justify-between border-t border-white/[0.07] bg-[#090d15]/90 backdrop-blur-xl text-[9px] font-mono">
-        <div className="flex items-center gap-4 text-slate-500"><span>ENTITIES <b className="text-slate-300">{entities.length}</b></span><span>AI AGENTS <b className="text-cyan-300">{agentDefinitions.length}</b></span><span>RENDER <b className="text-emerald-300">WEBGL</b></span>{simulation&&<span className="text-violet-300">SIMULATION DELTA: +8.7% ARR</span>}</div>
+        <div className="flex items-center gap-4 text-slate-500"><span>ENTITIES <b className="text-slate-300">{entities.length}</b></span><span>AI AGENTS <b className="text-cyan-300">{agentCount}</b></span><span>RENDER <b className="text-emerald-300">WEBGL</b></span>{simulation&&<span className="text-violet-300">SIMULATION DELTA: +8.7% ARR</span>}</div>
         <div className="flex items-center gap-3 text-slate-500"><span>SEC EVENTS <b className="text-cyan-300">{securityTelemetry.eventCount}</b></span><span>INCIDENTS <b className={securityTelemetry.incidentCount?'text-rose-300':'text-emerald-300'}>{securityTelemetry.incidentCount}</b></span><span className={securityTelemetry.ledgerValid?'text-emerald-300':'text-rose-300'}>LEDGER {securityTelemetry.ledgerValid?'VERIFIED':'CHECK'}</span><Target size={11}/> TICK {String(tick).padStart(6,'0')} <Sparkles size={11} className="text-cyan-300"/></div>
       </footer>
     </section>
