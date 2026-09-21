@@ -300,6 +300,7 @@ export default function App() {
           target: action.targetSystem,
           category: 'policy_gate',
           confidence: 100,
+          entityId: typeof action.parameters?.worldEntity === 'string' ? action.parameters.worldEntity : undefined,
         },
         ...prev,
       ]);
@@ -330,6 +331,17 @@ export default function App() {
             : record
         )
       );
+      setSystemState('investigating');
+      setActivityTicks((prev) => [{
+        id: `rollback_${Date.now()}`,
+        timestamp: new Date().toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' }),
+        agentName: 'POLICY GATE',
+        agentRole: 'Cryptographic Authorizer',
+        action: 'verified rollback and reconciled execution state',
+        target: 'Execution Ledger',
+        category: 'policy_gate',
+        confidence: 100,
+      }, ...prev]);
       showToast('State reconciled: rollback verified by Policy Gate.');
     } catch (error) {
       console.error('Rollback failed:', error);
@@ -601,6 +613,7 @@ export default function App() {
                     activityTicks={activityTicks}
                     currentEpoch={currentEpoch}
                     onEpochChange={handleEpochChange}
+                    executionRecords={executionRecords}
                     onExecutePolicyAction={handleOpenActionApproval}
                     onQuickInspectNode={(nodeId) => {
                       if (nodeId === 'sales') setActiveView('sales');
