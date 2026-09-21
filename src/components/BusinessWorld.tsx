@@ -24,15 +24,6 @@ interface BusinessWorldProps {
 
 type Entity3D = WorldNode & { position: [number, number, number] };
 
-const FALLBACK_ENTITIES: WorldNode[] = [
-  { id:'revenue', label:'Revenue', type:'revenue', metric:'$4.82M', subMetric:'ARR', status:'optimal', x:0, y:0, description:'Primary ARR generation and pricing intelligence.', details:{"keyDrivers":[],"riskScore":0,"headcountOrCapacity":"N/A","activeAnomalies":0,"ownerAgent":"Business Core"}, connections:['core','customers'] },
-  { id:'sales', label:'Sales Pipeline', type:'sales', metric:'$14.8M', subMetric:'PIPELINE', status:'active', x:0, y:0, description:'Enterprise pipeline, deal velocity and conversion.', details:{"keyDrivers":[],"riskScore":0,"headcountOrCapacity":"N/A","activeAnomalies":0,"ownerAgent":"Business Core"}, connections:['core','customers'] },
-  { id:'customers', label:'Customers', type:'customers', metric:'124%', subMetric:'NRR', status:'warning', x:0, y:0, description:'Retention, expansion and customer health.', details:{"keyDrivers":[],"riskScore":0,"headcountOrCapacity":"N/A","activeAnomalies":0,"ownerAgent":"Business Core"}, connections:['sales','revenue'] },
-  { id:'operations', label:'Operations', type:'operations', metric:'99.99%', subMetric:'HEALTH', status:'optimal', x:0, y:0, description:'Infrastructure, capacity and service reliability.', details:{"keyDrivers":[],"riskScore":0,"headcountOrCapacity":"N/A","activeAnomalies":0,"ownerAgent":"Business Core"}, connections:['core','finance'] },
-  { id:'finance', label:'Finance', type:'finance', metric:'$2.37M', subMetric:'LIQUIDITY', status:'optimal', x:0, y:0, description:'Treasury, cash position and capital allocation.', details:{"keyDrivers":[],"riskScore":0,"headcountOrCapacity":"N/A","activeAnomalies":0,"ownerAgent":"Business Core"}, connections:['core','operations'] },
-  { id:'core', label:'Business Core', type:'systems', metric:'42ms', subMetric:'LATENCY', status:'active', x:0, y:0, description:'Central orchestration, policy and decision runtime.', details:{"keyDrivers":[],"riskScore":0,"headcountOrCapacity":"N/A","activeAnomalies":0,"ownerAgent":"Business Core"}, connections:['revenue','sales','operations','finance'] },
-];
-
 const POSITIONS: Record<string, [number, number, number]> = {
   revenue: [-15, 2, -10], sales: [0, 2, -17], customers: [15, 2, -8],
   operations: [15, 2, 10], finance: [-14, 2, 12], core: [0, 4, 2],
