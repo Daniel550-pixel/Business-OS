@@ -209,6 +209,7 @@ export default function App() {
           timestamp: record.timestamp,
           status: record.status,
           reversible: record.status === 'COMMITTED',
+          parameters: record.parameters || {},
           hash: record.auditHash,
         }));
         setExecutionRecords(records);
@@ -284,6 +285,7 @@ export default function App() {
         timestamp: serverRecord.timestamp,
         status: serverRecord.status,
         reversible: true,
+        parameters: serverRecord.parameters || action.parameters || {},
         hash: serverRecord.auditHash,
       };
 
