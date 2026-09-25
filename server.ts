@@ -149,7 +149,9 @@ Return clean, valid JSON matching this schema:
 
       const response = await ai.models.generateContent({
         model: 'gemini-3.8-flash',
-        contents: `Business Context: ${JSON.stringify(businessContext || { arr: '$24.8M', runway: '22 mos', nrr: '118%' })}
+        contents: `Request ID: ${promptEnvelope.requestId}
+Prompt SHA-256: ${promptEnvelope.promptSha256}
+Business Context: ${businessContext || JSON.stringify({ arr: '$24.8M', runway: '22 mos', nrr: '118%' })}
 User Request: ${prompt}`,
         config: {
           systemInstruction,
@@ -161,12 +163,13 @@ User Request: ${prompt}`,
       const responseText = response.text || '{}';
       try {
         const parsed = JSON.parse(responseText);
-        return res.json({ success: true, source: 'gemini', data: parsed });
+        return res.json({ success: true, source: 'gemini', request: { requestId: promptEnvelope.requestId, promptChars: promptEnvelope.promptChars, contextChars: promptEnvelope.contextChars, promptSha256: promptEnvelope.promptSha256 }, data: parsed });
       } catch (e) {
         // if raw json parse fails, wrap text
         return res.json({
           success: true,
           source: 'gemini-raw',
+          request: { requestId: promptEnvelope.requestId, promptChars: promptEnvelope.promptChars, contextChars: promptEnvelope.contextChars, promptSha256: promptEnvelope.promptSha256 },
           data: {
             title: 'Executive Intelligence Briefing',
             analysis: responseText,
@@ -363,7 +366,7 @@ User Request: ${prompt}`,
     };
   }
 
-  res.json({ success: true, source: 'offline-intelligence-core', data: result });
+  res.json({ success: true, source: 'offline-intelligence-core', request: { requestId: promptEnvelope.requestId, promptChars: promptEnvelope.promptChars, contextChars: promptEnvelope.contextChars, promptSha256: promptEnvelope.promptSha256 }, data: result });
 });
 
 function evaluatePolicyGate(input: {
