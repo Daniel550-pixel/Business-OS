@@ -1,5 +1,6 @@
 import type {
   Agent,
+  AIActivityTick,
   BusinessAnomaly,
   BusinessMetric,
   BusinessOpportunity,
@@ -86,7 +87,7 @@ export const initialPendingActions: ProposedAction[] = [proposedRecoveryAction];
 
 export const initialExecutionRecords: ExecutionRecord[] = [];
 
-export const initialAIActivityStreamTicks = [
+export const initialAIActivityStreamTicks: AIActivityTick[] = [
   { id:'tick_01', timestamp:'08:42:10', agentName:'Revenue Agent', agentRole:'Revenue Intelligence', action:'correlated enterprise expansion telemetry', target:'Revenue', category:'reasoning', confidence:91, entityId:'revenue' },
   { id:'tick_02', timestamp:'08:41:12', agentName:'CEO Agent', agentRole:'Executive Orchestrator', action:'opened anomaly investigation', target:'Business OS Core', category:'telemetry', confidence:94, entityId:'core' },
   { id:'tick_03', timestamp:'08:38:44', agentName:'Ops Agent', agentRole:'Operations Intelligence', action:'flagged fulfilment latency variance', target:'Operations', category:'reasoning', confidence:87, entityId:'operations' },
