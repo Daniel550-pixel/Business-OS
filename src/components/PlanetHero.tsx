@@ -60,10 +60,9 @@ export const PlanetHero: React.FC<PlanetHeroProps> = ({
   const neuralPoster = 'https://d2ol7oe51mr4n9cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/130837c4-0244-4f37-9c61-8d801d93fd29.jpg';
 
   return (
-    <section className="cinematic-business-hero
+    <section className="cinematic-business-hero relative w-full flex flex-col justify-between items-center px-2 sm:px-4 lg:px-8 pt-4 pb-8 text-white select-none space-y-4">
       <video className="business-neural-art" autoPlay muted loop playsInline preload="auto" aria-hidden="true" poster={neuralPoster} src={neuralVideo} />
       <div className="business-neural-veil" aria-hidden="true" />
- relative w-full flex flex-col justify-between items-center px-2 sm:px-4 lg:px-8 pt-4 pb-8 text-white select-none space-y-4">
       <div className="cinematic-business-hero-copy" aria-label="Business OS introduction">
         <span className="cinematic-business-eyebrow">BUSINESS OS // INTELLIGENCE OPERATING ENVIRONMENT</span>
         <h1>See the business.<br /><em>Reason through the unknown.</em></h1>
