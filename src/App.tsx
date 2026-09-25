@@ -310,7 +310,8 @@ export default function App() {
       ]);
       setApprovalAction(null);
       setSystemState('mission_executing');
-      window.dispatchEvent(new CustomEvent('business-os:neural-flow', { detail: { stage: 'ledger', label: 'EXECUTION LEDGER', detail: 'Server-authoritative execution record committed and reconciled.' } }));
+      window.dispatchEvent(new CustomEvent('business-os:neural-flow', { detail: { stage: 'ledger',
+    stageId: 'authorized-act', label: 'EXECUTION LEDGER', detail: 'Server-authoritative execution record committed and reconciled.' } }));
       showToast(`Verified external mutation: "${action.title}" via Policy Gate`);
     } catch (error) {
       console.error('Policy Gate execution failed:', error);
@@ -465,7 +466,8 @@ export default function App() {
         pendingApprovalsCount={pendingActions.length}
         onOpenCommandCore={() => {
           setIsCommandModalOpen(true);
-          window.dispatchEvent(new CustomEvent('business-os:neural-flow', { detail: { stage: 'command', label: 'COMMAND CORE', detail: 'Operator intent channel opened. Awaiting analysis input.' } }));
+          window.dispatchEvent(new CustomEvent('business-os:neural-flow', { detail: { stage: 'command',
+    stageId: 'understand-perception', label: 'COMMAND CORE', detail: 'Operator intent channel opened. Awaiting analysis input.' } }));
         }}
       />
 
