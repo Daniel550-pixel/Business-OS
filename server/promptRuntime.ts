@@ -1,7 +1,10 @@
 import crypto from 'node:crypto';
 
-export const DEFAULT_MAX_PROMPT_CHARS = 1_500_000;
-export const DEFAULT_MAX_CONTEXT_CHARS = 120_000;
+const configuredPromptLimit = Number(process.env.BUSINESS_OS_MAX_PROMPT_CHARS);
+const configuredContextLimit = Number(process.env.BUSINESS_OS_MAX_CONTEXT_CHARS);
+
+export const DEFAULT_MAX_PROMPT_CHARS = Number.isInteger(configuredPromptLimit) && configuredPromptLimit > 0 ? configuredPromptLimit : 1_500_000;
+export const DEFAULT_MAX_CONTEXT_CHARS = Number.isInteger(configuredContextLimit) && configuredContextLimit > 0 ? configuredContextLimit : 120_000;
 
 export interface PromptEnvelope {
   requestId: string;
