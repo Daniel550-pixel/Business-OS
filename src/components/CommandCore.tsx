@@ -99,6 +99,7 @@ export const CommandCore: React.FC<CommandCoreProps> = ({
     setIsProcessing(true);
     setResult(null);
     setAnalysisSteps([]);
+    window.dispatchEvent(new CustomEvent('business-os:neural-flow', { detail: { stage: 'reasoning', label: 'REASONING STREAM', detail: 'Command accepted. Multi-agent analysis is correlating business telemetry.' } }));
 
     // Step-by-step visual stream of intelligence
     const stepSequence = [
@@ -133,6 +134,7 @@ export const CommandCore: React.FC<CommandCoreProps> = ({
       const json = await response.json();
       if (json.success && json.data) {
         setResult(json.data);
+        window.dispatchEvent(new CustomEvent('business-os:neural-flow', { detail: { stage: 'evidence', label: 'EVIDENCE SYNTHESIS', detail: 'Analysis returned. Claims, anomalies and proposed actions are now inspectable.', requestId: json.requestId } }));
         if (json.data.affectedNodes && onHighlightNodes) {
           onHighlightNodes(json.data.affectedNodes);
         }
