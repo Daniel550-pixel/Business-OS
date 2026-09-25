@@ -25,9 +25,7 @@ import { ExecutiveCockpit } from './components/ExecutiveCockpit';
 import { AIIntelligenceLayer } from './components/AIIntelligenceLayer';
 import { AIActivityStream } from './components/AIActivityStream';
 import { SecurityHUD } from './components/SecurityHUD';
-import { PlanetHero } from './components/PlanetHero';
-import { PlanetaryAtmosphere } from './components/PlanetaryAtmosphere';
-import { NeuralFlowOverlay } from './components/NeuralFlowOverlay';
+import { AgentScreen } from './components/AgentScreen';
 
 import {
   initialMetrics,
@@ -177,7 +175,6 @@ export default function App() {
   // AI Activity stream ticks
   const [activityTicks, setActivityTicks] = useState(initialAIActivityStreamTicks);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
-  const [showBackToPlanet, setShowBackToPlanet] = useState(false);
 
   // The browser keeps only proposal state; the durable execution ledger is server-authoritative.
   useEffect(() => {
@@ -223,27 +220,6 @@ export default function App() {
 
     return () => window.removeEventListener('storage', syncPendingActions);
   }, []);
-
-  useEffect(() => {
-    const handleScroll = () => {
-      setShowBackToPlanet(window.scrollY > 350);
-    };
-    window.addEventListener('scroll', handleScroll, { passive: true });
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
-
-  const handleScrollToDashboard = () => {
-    const el = document.getElementById('dashboard-viewport');
-    if (el) {
-      el.scrollIntoView({ behavior: 'smooth' });
-    } else {
-      window.scrollTo({ top: 780, behavior: 'smooth' });
-    }
-  };
-
-  const handleScrollToTop = () => {
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
 
   const showToast = (msg: string) => {
     setToastMessage(msg);
@@ -440,7 +416,6 @@ export default function App() {
 
   return (
     <div className={`business-os-shell min-h-screen text-slate-100 flex flex-col selection:bg-cyan-500/30 selection:text-cyan-200 transition-all duration-300 ${getContainerStateClass()}`}>
-      <PlanetaryAtmosphere />
       <div className="business-os-cinematic-bg" aria-hidden="true">
         <video id="businessOsBgA" className="business-os-bg-video is-active" autoPlay muted loop playsInline preload="auto" disablePictureInPicture poster="https://d2ol7oe51mr4n9cf9b4n9.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/82e7eb75-c65f-490a-99b5-f3d1cad54200.webp">
           <source src="https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260912_104036_bd6924f6-3c8e-417e-8465-6d03c8c2e9e6.mp4" type="video/mp4" />
@@ -450,7 +425,6 @@ export default function App() {
         </video>
         <div className="business-os-cinematic-veil" />
       </div>
-      <NeuralFlowOverlay systemState={systemState} pendingApprovalsCount={pendingActions.length} />
 
       {/* Telemetry Header & View Switcher */}
       <Navigation
@@ -503,79 +477,38 @@ export default function App() {
           />
         ) : (
           <>
-            {/* Open Planet UI: Expansive, unobstructed hero showcasing the celestial 3D world */}
-            {(activeView === 'command-center' || activeView === 'command') && (
-              <PlanetHero
-                onScrollToDashboard={handleScrollToDashboard}
+            {/* Unified Agent Screen: business reality and planetary runtime are one interface. */}
+            {(activeView === 'command-center' || activeView === 'command' || activeView === 'business-world' || activeView === 'world') && (
+              <AgentScreen
+                systemState={systemState}
+                agents={agents}
+                missions={missions}
+                nodes={nodes}
+                selectedNode={selectedNode}
+                pendingActions={pendingActions}
+                executionRecords={executionRecords}
+                activityTicks={activityTicks}
+                metrics={metrics}
+                onSelectNode={setSelectedNode}
+                onExecuteAction={handleOpenActionApproval}
                 onOpenCommandCore={() => {
                   setIsCommandModalOpen(true);
-                  window.dispatchEvent(new CustomEvent('business-os:neural-flow', { detail: { stage: 'command', label: 'COMMAND CORE', detail: 'Operator intent channel opened. Awaiting analysis input.' } }));
+                  window.dispatchEvent(new CustomEvent('business-os:neural-flow', {
+                    detail: {
+                      stage: 'command',
+                      stageId: 'understand-perception',
+                      label: 'AGENT COMMAND',
+                      detail: 'Operator intent channel opened. Awaiting analysis input.',
+                    },
+                  }));
                 }}
-                onNavigateToView={(v) => {
-                  setActiveView(v);
+                onOpenEvidence={(title, claim, confidence) => handleOpenEvidence(title, claim, confidence)}
+                onNavigateToView={(view) => {
+                  setActiveView(view);
                   setActiveFocusObjective(null);
                 }}
-                systemState={systemState}
-                pendingApprovalsCount={pendingActions.length}
-                activeMissionsCount={missions.length}
               />
             )}
-
-            {/* Dashboard Container: Smoothly scrolled to from the Planet UI */}
-            <div id="dashboard-viewport" className="space-y-6 scroll-mt-14">
-              {/* Persistent AI Intelligence Presence Loop (Top of Command & Business World) */}
-              {(activeView === 'command-center' || activeView === 'command' || activeView === 'business-world') && (
-                <AIIntelligenceLayer
-                  systemState={systemState}
-                  onSelectStep={(step) => showToast(`Selected Reasoning Stage: ${step}`)}
-                  onOpenFocus={(objId) => handleTriggerFocus(objId)}
-                />
-              )}
-
-              {/* View: Command Center */}
-              {(activeView === 'command-center' || activeView === 'command') && (
-                <div className="space-y-6">
-                  <CommandCenter
-                    metrics={metrics}
-                    anomalies={anomalies}
-                    opportunities={opportunities}
-                    missions={missions}
-                    agents={agents}
-                    nodes={nodes}
-                    selectedNode={selectedNode}
-                    onSelectNode={setSelectedNode}
-                    events={events}
-                    pendingActions={pendingActions}
-                    recentExecutions={executionRecords}
-                    activityTicks={activityTicks}
-                    onExecuteAction={handleOpenActionApproval}
-                    onSelectMission={(m) => {
-                      setSelectedMission(m);
-                      setActiveView('missions');
-                    }}
-                    onSelectAgent={(ag) => {
-                      setSelectedAgent(ag);
-                      setActiveView('agents');
-                    }}
-                    onNavigateToView={setActiveView}
-                  />
-
-                  {/* AI Live Activity Stream */}
-                  <AIActivityStream
-                    ticks={activityTicks}
-                    onSelectEntity={(entityId) => {
-                      const match = initialHierarchyEntities.find((e) => e.id === entityId);
-                      if (match) setSelectedSpatialEntity(match);
-                    }}
-                    onOpenApproval={() => {
-                      if (pendingActions.length > 0) {
-                        handleOpenActionApproval(pendingActions[0]);
-                      }
-                    }}
-                  />
-                </div>
-              )}
-            </div>
 
             {/* View: Security Layer — authoritative security telemetry surface */}
             {activeView === 'cyber-hud' && <SecurityHUD />}
@@ -842,18 +775,6 @@ export default function App() {
           setSystemState('risk_detected');
         }}
       />
-
-      {/* Floating Return to Planet UI button */}
-      {showBackToPlanet && (activeView === 'command-center' || activeView === 'command') && (
-        <button
-          onClick={handleScrollToTop}
-          className="fixed bottom-6 right-6 z-40 px-3.5 py-2 rounded-full bg-black/70 hover:bg-black/90 border border-cyan-500/40 text-cyan-300 hover:text-white font-mono text-xs flex items-center gap-2 backdrop-blur-xl shadow-[0_4px_24px_rgba(0,240,255,0.3)] hover:border-cyan-400 transition-all animate-in fade-in cursor-pointer group"
-          title="Return to Planet View"
-        >
-          <span className="text-cyan-400 group-hover:-translate-y-0.5 transition-transform font-bold">↑</span>
-          <span className="text-[11px] tracking-wider uppercase font-bold">PLANET UI</span>
-        </button>
-      )}
 
       {/* Subtle Toast Feedback */}
       {toastMessage && (
