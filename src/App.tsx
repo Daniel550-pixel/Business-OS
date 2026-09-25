@@ -39,12 +39,12 @@ import {
   initialEvents,
   initialPendingActions,
   initialExecutionRecords,
+  initialAIActivityStreamTicks,
 } from './data/mockBusinessState';
 
 import {
   initialHierarchyEntities,
   initialFocusObjectives,
-  initialAIActivityStreamTicks,
   initialTemporalSnapshots,
 } from './data/digitalTwinData';
 
