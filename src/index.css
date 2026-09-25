@@ -1,3 +1,4 @@
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;1,400&family=Inter:wght@300;400;500&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=Sora:wght@100..900&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
 @import "tailwindcss";
@@ -561,3 +562,8 @@ body{
 @media(prefers-reduced-motion:reduce){
  .cinematic-orbit-field span{animation:none}
 }
+
+.cinematic-command-overlay .command-core-container{background:transparent!important;border:0!important;box-shadow:none!important;backdrop-filter:none!important;overflow:visible!important}
+.cinematic-command-overlay .command-core-container>div:first-child{background:transparent!important;border:0!important;padding:0 0 18px!important}
+.cinematic-command-overlay .command-core-container>div:first-child>div:first-child>div:first-child{display:none}
+.cinematic-command-overlay .command-core-container>div:first-child>div:last-child{margin-left:auto}
