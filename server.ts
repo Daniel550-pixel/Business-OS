@@ -147,7 +147,7 @@ Return clean, valid JSON matching this schema:
   "affectedNodes": ["revenue", "sales", "customers"]
 }`;
 
-      const maxModelPromptChars = Number(process.env.BUSINESS_OS_GEMINI_CHUNK_CHARS || 240_000);
+      const configuredGeminiChunkChars = Number(process.env.BUSINESS_OS_GEMINI_CHUNK_CHARS);\n      const maxModelPromptChars = Number.isInteger(configuredGeminiChunkChars) && configuredGeminiChunkChars > 0 ? configuredGeminiChunkChars : 240_000;
       const chunks = chunkPrompt(prompt, maxModelPromptChars);
       let responseText = '{}';
 
