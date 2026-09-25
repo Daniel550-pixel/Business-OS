@@ -511,3 +511,53 @@ body{
   .business-os-bg-video{transition:none}
   .business-os-bg-video.is-active{opacity:1}
 }
+
+
+/* Cinematic archive-inspired Business-OS command flow */
+.cinematic-command-overlay{position:fixed;inset:0;z-index:100;background:#000;color:#f4f2ef;overflow:hidden}
+.cinematic-command-backdrop{position:absolute;inset:0;background:radial-gradient(ellipse 72% 68% at 50% 48%,rgba(24,42,54,.34),transparent 62%),#000}
+.cinematic-command-modal{position:relative;width:100%;height:100%;isolation:isolate}
+.cinematic-modal-header{position:absolute;top:0;left:0;right:0;z-index:5;display:flex;justify-content:space-between;align-items:flex-start;padding:calc(clamp(14px,2.6vw,34px)*.8) clamp(14px,2.6vw,34px);mix-blend-mode:difference}
+.cinematic-wordmark{font-family:'Playfair Display','Times New Roman',serif;font-size:clamp(19px,2.1vw,27px);color:#fff;background:none;border:0;cursor:pointer}
+.cinematic-wordmark em{font-style:normal}
+.cinematic-menu-button{position:relative;min-width:76px;min-height:44px;padding:8px 0 4px;background:none;border:0;color:#fff;text-transform:uppercase;letter-spacing:.12em;font-size:11px;cursor:pointer}
+.cinematic-menu-button i{position:absolute;right:0;width:54px;height:1px;background:#fff;top:25px;display:block}
+.cinematic-menu-button i+ i{width:42px;top:31px}
+.cinematic-modal-stage{position:absolute;inset:0;display:grid;place-items:center;padding:110px 24px 90px;overflow:auto}
+.cinematic-command-heading{position:absolute;top:18%;left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:12px;font:10px 'JetBrains Mono',monospace;letter-spacing:.22em;color:rgba(244,242,239,.45);white-space:nowrap}
+.cinematic-command-heading i{width:44px;height:1px;background:rgba(244,242,239,.28)}
+.cinematic-orbit-field{position:absolute;left:50%;top:50%;width:min(70vw,720px);height:min(70vw,720px);transform:translate(-50%,-50%);pointer-events:none;opacity:.42}
+.cinematic-orbit-field span{position:absolute;inset:0;border:1px solid rgba(244,242,239,.09);border-radius:50%;animation:cinematic-orbit 18s linear infinite}
+.cinematic-orbit-field span:nth-child(2){inset:10%;animation-duration:24s;transform:rotate(55deg)}
+.cinematic-orbit-field span:nth-child(3){inset:22%;animation-duration:13s;transform:rotate(-35deg)}
+.cinematic-orbit-field b{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);font:400 clamp(18px,3vw,34px) 'Playfair Display',serif;letter-spacing:.08em;color:rgba(244,242,239,.72)}
+@keyframes cinematic-orbit{to{transform:rotate(360deg)}}
+.cinematic-modal-stage>.cinematic-command-shell{position:relative;z-index:2;width:min(900px,94vw);background:transparent}
+.cinematic-command-shell{font-family:'Plus Jakarta Sans',sans-serif}
+.cinematic-command-shell>div:first-child{background:transparent;border:0;box-shadow:none}
+.cinematic-command-shell .cinematic-prompt-form{position:relative;background:rgba(0,0,0,.62);border:1px solid rgba(244,242,239,.24);box-shadow:0 30px 100px rgba(0,0,0,.7);padding:18px;backdrop-filter:blur(18px)}
+.cinematic-command-shell .cinematic-prompt-input{width:100%;min-height:150px;max-height:420px;resize:vertical;box-sizing:border-box;background:transparent;border:0;outline:0;color:#f4f2ef;font:300 clamp(16px,1.7vw,22px)/1.5 'Inter','Segoe UI',sans-serif;letter-spacing:.005em;padding:8px 120px 42px 8px}
+.cinematic-command-shell .cinematic-prompt-input::placeholder{color:rgba(244,242,239,.32)}
+.cinematic-prompt-meta{position:absolute;left:26px;bottom:25px;display:flex;gap:18px;font:10px 'JetBrains Mono',monospace;letter-spacing:.08em;color:rgba(244,242,239,.35)}
+.cinematic-prompt-submit{position:absolute;right:24px;bottom:20px;min-height:44px;padding:10px 18px;border:1px solid rgba(244,242,239,.42);border-radius:999px;background:rgba(244,242,239,.08);color:#f4f2ef;font:500 11px 'Inter',sans-serif;letter-spacing:.13em;text-transform:uppercase;cursor:pointer}
+.cinematic-prompt-submit:hover{background:rgba(244,242,239,.16);border-color:#fff}
+.cinematic-modal-footer{position:absolute;left:clamp(14px,2.6vw,34px);right:clamp(14px,2.6vw,34px);bottom:20px;z-index:4;display:flex;justify-content:space-between;font:10px 'JetBrains Mono',monospace;letter-spacing:.14em;color:rgba(244,242,239,.38)}
+.cinematic-command-overlay .cinematic-command-shell .rounded-xl{border-radius:0!important}
+.cinematic-full-menu{position:absolute;inset:0;z-index:20;background:#050505;display:grid;place-items:center}
+.cinematic-full-menu>button{position:absolute;right:32px;top:24px;background:none;border:1px solid rgba(244,242,239,.4);color:#f4f2ef;padding:10px 16px;border-radius:999px}
+.cinematic-full-menu nav{display:flex;flex-direction:column;gap:8px;text-align:center}
+.cinematic-full-menu nav button{background:none;border:0;color:#f4f2ef;font:400 clamp(32px,7vw,74px) 'Playfair Display',serif;cursor:pointer;opacity:.58}
+.cinematic-full-menu nav button:hover{opacity:1}
+@media(max-width:640px){
+ .cinematic-modal-stage{padding:90px 14px 90px}
+ .cinematic-command-heading{top:13%;font-size:8px;letter-spacing:.13em}
+ .cinematic-command-heading i{width:24px}
+ .cinematic-orbit-field{width:94vw;height:94vw}
+ .cinematic-command-shell .cinematic-prompt-input{min-height:190px;padding:8px 8px 58px;font-size:16px}
+ .cinematic-prompt-meta{left:22px;bottom:22px;display:block;line-height:1.7}
+ .cinematic-prompt-submit{right:18px;bottom:18px}
+ .cinematic-modal-footer{display:none}
+}
+@media(prefers-reduced-motion:reduce){
+ .cinematic-orbit-field span{animation:none}
+}
