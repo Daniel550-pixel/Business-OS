@@ -513,68 +513,7 @@ export default function App() {
             {/* View: Security Layer — authoritative security telemetry surface */}
             {activeView === 'cyber-hud' && <SecurityHUD />}
 
-            {/* View: Business World & Digital Twin Hierarchy */}
-            {(activeView === 'business-world' || activeView === 'world') && (
-              <div className="space-y-6">
-                <DigitalTwinHierarchy
-                  onSelectEntity={(entity) => setSelectedSpatialEntity(entity)}
-                  onExplainEvidence={(entity) => {
-                    if (entity.evidence) {
-                      handleOpenEvidence(
-                        `${entity.name} Telemetry Evidence`,
-                        entity.summary,
-                        entity.healthScore,
-                        entity.evidence.primaryFactors,
-                        {
-                          transactionsCount: entity.evidence.transactionsCount,
-                          crmEventsCount: entity.evidence.crmEventsCount,
-                          historicalComparisons: entity.evidence.historicalComparisons,
-                          traces: entity.evidence.traces,
-                        }
-                      );
-                    }
-                  }}
-                  onInvestigateEntity={(entity) => {
-                    showToast(`Launching autonomous agent investigation into ${entity.name}`);
-                    setSystemState('investigating');
-                  }}
-                />
-
-                {/* Spatial Topology Graph */}
-                <div className="space-y-3 pt-4 border-t border-white/[0.08]">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h3 className="text-sm font-bold text-white uppercase font-mono">
-                        Spatial Relationship Topology Network
-                      </h3>
-                      <p className="text-xs text-slate-400">
-                        Interactive relationship mapping across revenue, customers, sales, operations, and autonomous swarms.
-                      </p>
-                    </div>
-                  </div>
-
-                  <BusinessWorld
-                    nodes={nodes}
-                    selectedNode={selectedNode}
-                    onSelectNode={setSelectedNode}
-                    highlightedNodeIds={highlightedNodeIds}
-                    hierarchyEntities={initialHierarchyEntities}
-                    systemState={systemState}
-                    activityTicks={activityTicks}
-                    currentEpoch={currentEpoch}
-                    onEpochChange={handleEpochChange}
-                    executionRecords={executionRecords}
-                    onExecutePolicyAction={handleOpenActionApproval}
-                    onQuickInspectNode={(nodeId) => {
-                      if (nodeId === 'sales') setActiveView('sales');
-                      else if (nodeId === 'revenue') setActiveView('finance');
-                      else if (nodeId === 'operations') setActiveView('operations');
-                      else if (nodeId === 'customers') setActiveView('customers');
-                    }}
-                  />
-                </div>
-              </div>
-            )}
+            {/* Business reality is now embedded directly in AgentScreen. The legacy standalone planet/digital-twin surface is intentionally removed. */}
 
             {/* View: Missions */}
             {activeView === 'missions' && (
