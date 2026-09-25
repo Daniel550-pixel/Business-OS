@@ -174,7 +174,7 @@ export const CommandCore: React.FC<CommandCoreProps> = ({
   };
 
   const containerContent = (
-    <div className="w-full rounded-xl bg-[#0b0f19]/90 border border-white/[0.08] shadow-[0_8px_32px_rgba(0,0,0,0.5)] backdrop-blur-xl overflow-hidden">
+    <div className="command-core-container w-full rounded-xl bg-[#0b0f19]/90 border border-white/[0.08] shadow-[0_8px_32px_rgba(0,0,0,0.5)] backdrop-blur-xl overflow-hidden">
       {/* Header Bar */}
       <div className="flex items-center justify-between px-4 py-3 bg-gradient-to-r from-cyan-950/30 via-transparent to-blue-950/20 border-b border-white/[0.06]">
         <div className="flex items-center gap-2.5">
