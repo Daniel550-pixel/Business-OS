@@ -45,3 +45,29 @@ export function createPromptEnvelope(promptInput: unknown, contextInput?: unknow
     promptSha256: crypto.createHash('sha256').update(prompt, 'utf8').digest('hex'),
   };
 }
+
+
+export interface PromptChunk {
+  index: number;
+  total: number;
+  start: number;
+  end: number;
+  text: string;
+}
+
+/** Split a validated prompt into bounded model-input chunks without losing source offsets. */
+export function chunkPrompt(prompt: string, maxChunkChars = 240_000): PromptChunk[] {
+  if (!Number.isInteger(maxChunkChars) || maxChunkChars <= 0) {
+    throw new Error('maxChunkChars must be a positive integer.');
+  }
+  if (prompt.length <= maxChunkChars) {
+    return [{ index: 1, total: 1, start: 0, end: prompt.length, text: prompt }];
+  }
+
+  const chunks: PromptChunk[] = [];
+  for (let start = 0; start < prompt.length; start += maxChunkChars) {
+    const end = Math.min(start + maxChunkChars, prompt.length);
+    chunks.push({ index: chunks.length + 1, total: 0, start, end, text: prompt.slice(start, end) });
+  }
+  return chunks.map((chunk) => ({ ...chunk, total: chunks.length }));
+}
