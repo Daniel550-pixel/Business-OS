@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   ChevronDown,
   Sparkles,
@@ -37,6 +37,19 @@ export const PlanetHero: React.FC<PlanetHeroProps> = ({
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [heroMode, setHeroMode] = useState<'3d-flow' | 'planet-orbit'>('3d-flow');
+
+  useEffect(() => {
+    const video = document.querySelector<HTMLVideoElement>('.business-neural-art');
+    const query = window.matchMedia?.('(prefers-reduced-motion: reduce)');
+    if (!video || !query) return;
+    const sync = () => {
+      if (query.matches) video.pause();
+      else video.play().catch(() => undefined);
+    };
+    sync();
+    query.addEventListener?.('change', sync);
+    return () => query.removeEventListener?.('change', sync);
+  }, []);
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
