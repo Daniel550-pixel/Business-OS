@@ -51,8 +51,33 @@ export const Navigation: React.FC<NavigationProps> = ({
   geminiActive = true,
 }) => {
   const [time, setTime] = useState<string>('');
+  const [fps, setFps] = useState(60);
   const activeCurrentView = activeView || currentView || 'command-center';
   const handleOpenPrompt = onOpenCommandCore || onOpenCommandPalette || (() => {});
+
+  useEffect(() => {
+    let frame = 0;
+    let last = performance.now();
+    let smoothed = 60;
+    let lastUiUpdate = last;
+
+    const measure = (now: number) => {
+      const delta = now - last;
+      last = now;
+      if (delta > 0 && delta < 1000) {
+        const instant = Math.min(144, 1000 / delta);
+        smoothed += (instant - smoothed) * 0.08;
+        if (now - lastUiUpdate >= 250) {
+          setFps(Math.max(1, Math.round(smoothed)));
+          lastUiUpdate = now;
+        }
+      }
+      frame = requestAnimationFrame(measure);
+    };
+
+    frame = requestAnimationFrame(measure);
+    return () => cancelAnimationFrame(frame);
+  }, []);
 
   useEffect(() => {
     const updateTime = () => {
@@ -149,7 +174,7 @@ export const Navigation: React.FC<NavigationProps> = ({
             <span className="text-slate-500">•</span>
             <span className="text-slate-300">{time || '00:00:00 UTC'}</span>
             <span className="text-slate-500">•</span>
-            <span className="text-slate-400">p99 42ms</span>
+            <span className="text-slate-400">FPS {fps}</span><span className="text-slate-500">•</span><span className="text-slate-400">p99 42ms</span>
           </div>
         </div>
 
