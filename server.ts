@@ -76,8 +76,34 @@ app.post('/api/gemini/command', async (req, res) => {
     description:'Command Core received an agent/AI command request.',
     metadata:{commandPresent:typeof req.body?.command==='string'},
   });
-  const { command, businessContext } = req.body;
-  const prompt = command || 'Analyze current business health and anomalies';
+  let promptEnvelope;
+  try {
+    promptEnvelope = createPromptEnvelope(
+      req.body?.command || 'Analyze current business health and anomalies',
+      req.body?.businessContext
+    );
+  } catch (error: any) {
+    const message = error?.message || 'Invalid prompt payload.';
+    appendSecurityEvent({
+      eventType: 'AGENT_COMMAND_REJECTED',
+      severity: 'MEDIUM',
+      actorId: typeof req.header('x-actor-id') === 'string' ? req.header('x-actor-id') || undefined : undefined,
+      agentId: 'command-core',
+      sessionId: typeof req.header('x-session-id') === 'string' ? req.header('x-session-id') || undefined : undefined,
+      verification: 'FAILED',
+      policyDecision: 'DENY',
+      description: 'Command Core rejected an invalid or oversized prompt envelope.',
+      metadata: { reason: message },
+    });
+    return res.status(message.includes('maximum supported size') ? 413 : 400).json({
+      success: false,
+      error: message,
+      code: message.includes('maximum supported size') ? 'PROMPT_TOO_LARGE' : 'INVALID_PROMPT',
+    });
+  }
+
+  const prompt = promptEnvelope.prompt;
+  const businessContext = promptEnvelope.context;
 
   try {
     const ai = getGeminiClient();
