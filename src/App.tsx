@@ -308,6 +308,7 @@ export default function App() {
       ]);
       setApprovalAction(null);
       setSystemState('mission_executing');
+      window.dispatchEvent(new CustomEvent('business-os:neural-flow', { detail: { stage: 'ledger', label: 'EXECUTION LEDGER', detail: 'Server-authoritative execution record committed and reconciled.' } }));
       showToast(`Verified external mutation: "${action.title}" via Policy Gate`);
     } catch (error) {
       console.error('Policy Gate execution failed:', error);
@@ -457,7 +458,10 @@ export default function App() {
         systemState={systemState}
         onSystemStateChange={setSystemState}
         pendingApprovalsCount={pendingActions.length}
-        onOpenCommandCore={() => setIsCommandModalOpen(true)}
+        onOpenCommandCore={() => {
+          setIsCommandModalOpen(true);
+          window.dispatchEvent(new CustomEvent('business-os:neural-flow', { detail: { stage: 'command', label: 'COMMAND CORE', detail: 'Operator intent channel opened. Awaiting analysis input.' } }));
+        }}
       />
 
       {/* Main Content Viewport */}
@@ -496,7 +500,10 @@ export default function App() {
             {(activeView === 'command-center' || activeView === 'command') && (
               <PlanetHero
                 onScrollToDashboard={handleScrollToDashboard}
-                onOpenCommandCore={() => setIsCommandModalOpen(true)}
+                onOpenCommandCore={() => {
+                  setIsCommandModalOpen(true);
+                  window.dispatchEvent(new CustomEvent('business-os:neural-flow', { detail: { stage: 'command', label: 'COMMAND CORE', detail: 'Operator intent channel opened. Awaiting analysis input.' } }));
+                }}
                 onNavigateToView={(v) => {
                   setActiveView(v);
                   setActiveFocusObjective(null);
@@ -792,7 +799,10 @@ export default function App() {
       {isCommandModalOpen && (
         <CommandCore
           isOpenAsModal={true}
-          onCloseModal={() => setIsCommandModalOpen(false)}
+          onCloseModal={() => {
+            setIsCommandModalOpen(false);
+            window.dispatchEvent(new CustomEvent('business-os:neural-flow', { detail: { stage: 'neural', label: 'NEURAL FIELD', detail: 'Command surface closed. Live planetary intelligence remains active.' } }));
+          }}
           onExecuteAction={handleOpenActionApproval}
           onOpenMission={(newM) => {
             handleCreateMission(newM);
