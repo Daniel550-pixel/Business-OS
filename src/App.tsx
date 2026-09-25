@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { Navigation } from './components/Navigation';
 import { CommandCenter } from './components/CommandCenter';
 import { BusinessWorld } from './components/BusinessWorld';
@@ -404,7 +404,7 @@ export default function App() {
   };
 
   // Handle temporal epoch switch
-  const handleEpochChange = (epoch: TemporalEpoch) => {
+  const handleEpochChange = useCallback((epoch: TemporalEpoch) => {
     setCurrentEpoch(epoch);
     const snap = initialTemporalSnapshots[epoch];
     // Morph active metric for display
@@ -416,7 +416,7 @@ export default function App() {
       )
     );
     showToast(`Temporal Scrub: ${epoch} — ARR: ${snap.arr} (${snap.keyEvent})`);
-  };
+  }, []);
 
   // State-aware dynamic border/glow class
   const getContainerStateClass = () => {
@@ -533,6 +533,7 @@ export default function App() {
                     events={events}
                     pendingActions={pendingActions}
                     recentExecutions={executionRecords}
+                    activityTicks={activityTicks}
                     onExecuteAction={handleOpenActionApproval}
                     onSelectMission={(m) => {
                       setSelectedMission(m);

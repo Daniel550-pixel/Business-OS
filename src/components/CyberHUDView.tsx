@@ -41,6 +41,7 @@ interface CyberHUDViewProps {
   onEpochChange?: (epoch: TemporalEpoch) => void;
   onOpenCommandCore?: () => void;
   onSelectSpatialEntity?: (entity: HierarchyEntity) => void;
+  onNavigateToView?: (view: any) => void;
 }
 
 export const CyberHUDView: React.FC<CyberHUDViewProps> = ({
@@ -56,6 +57,7 @@ export const CyberHUDView: React.FC<CyberHUDViewProps> = ({
   currentEpoch = 'NOW',
   onEpochChange,
   onOpenCommandCore,
+  onNavigateToView,
 }) => {
   const [activeTab, setActiveTab] = useState<'matrix' | 'swarm' | 'telemetry'>('matrix');
   const [pulseTick, setPulseTick] = useState<number>(0);
@@ -198,6 +200,15 @@ export const CyberHUDView: React.FC<CyberHUDViewProps> = ({
 
             {/* Right Action Switchers */}
             <div className="flex items-center gap-2 shrink-0">
+              {onNavigateToView && (
+                <button
+                  onClick={() => onNavigateToView('system-flow')}
+                  className="px-3 py-1.5 rounded-lg bg-cyan-500/20 hover:bg-cyan-500/30 border border-cyan-400/50 text-xs font-mono font-bold text-cyan-200 transition-all flex items-center gap-1.5 shadow-[0_0_12px_rgba(6,182,212,0.4)]"
+                >
+                  <Sparkles className="w-3.5 h-3.5 text-cyan-300 animate-pulse" />
+                  <span>3D LIVING FLOW</span>
+                </button>
+              )}
               <button
                 onClick={onOpenCommandCore}
                 className="px-3 py-1.5 rounded-lg bg-black/50 hover:bg-black/70 border border-white/30 text-xs font-mono font-bold text-white transition-all flex items-center gap-1.5 shadow-[0_0_12px_rgba(0,0,0,0.5)]"

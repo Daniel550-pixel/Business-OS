@@ -28,6 +28,7 @@ import {
   IntelligenceEvent,
   ProposedAction,
   ExecutionRecord,
+  AIActivityTick,
 } from '../types';
 import { BusinessWorld } from './BusinessWorld';
 import { CommandCore } from './CommandCore';
@@ -44,6 +45,7 @@ interface CommandCenterProps {
   events: IntelligenceEvent[];
   pendingActions: ProposedAction[];
   recentExecutions: ExecutionRecord[];
+  activityTicks?: AIActivityTick[];
   onExecuteAction: (action: ProposedAction) => void;
   onSelectMission: (mission: Mission) => void;
   onSelectAgent: (agent: Agent) => void;
@@ -62,6 +64,7 @@ export const CommandCenter: React.FC<CommandCenterProps> = ({
   events,
   pendingActions,
   recentExecutions,
+  activityTicks,
   onExecuteAction,
   onSelectMission,
   onSelectAgent,
@@ -208,6 +211,7 @@ export const CommandCenter: React.FC<CommandCenterProps> = ({
             nodes={nodes}
             selectedNode={selectedNode}
             onSelectNode={onSelectNode}
+            activityTicks={activityTicks}
             onQuickInspectNode={(nodeId) => {
               if (nodeId === 'sales') onNavigateToView('sales');
               else if (nodeId === 'revenue') onNavigateToView('finance');

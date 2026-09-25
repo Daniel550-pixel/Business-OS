@@ -1,6 +1,8 @@
 export type ViewMode =
   | 'command-center'
   | 'command'
+  | 'system-flow'
+  | 'living-flow'
   | 'cyber-hud'
   | 'business-world'
   | 'world'

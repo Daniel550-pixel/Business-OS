@@ -16,12 +16,14 @@ interface AIIntelligenceLayerProps {
   systemState: SystemRuntimeState;
   onSelectStep?: (stepName: string) => void;
   onOpenFocus?: (objectiveId: string) => void;
+  onNavigateToLivingFlow?: () => void;
 }
 
 export const AIIntelligenceLayer: React.FC<AIIntelligenceLayerProps> = ({
   systemState,
   onSelectStep,
   onOpenFocus,
+  onNavigateToLivingFlow,
 }) => {
   const [isExpanded, setIsExpanded] = useState<boolean>(true);
 
@@ -80,13 +82,26 @@ export const AIIntelligenceLayer: React.FC<AIIntelligenceLayerProps> = ({
           </div>
         </div>
 
-        <button
-          onClick={() => setIsExpanded(!isExpanded)}
-          className="flex items-center gap-1 text-[11px] font-mono text-slate-400 hover:text-white px-2 py-1 rounded-lg hover:bg-white/[0.05] transition-colors"
-        >
-          <span>{isExpanded ? 'Minimize' : 'Expand'}</span>
-          {isExpanded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
-        </button>
+        <div className="flex items-center gap-2">
+          {onNavigateToLivingFlow && (
+            <button
+              onClick={onNavigateToLivingFlow}
+              className="flex items-center gap-1.5 text-[11px] font-mono text-cyan-300 hover:text-white px-2.5 py-1 rounded-lg bg-cyan-500/15 hover:bg-cyan-500/25 border border-cyan-500/30 transition-all shadow-[0_0_10px_rgba(6,182,212,0.2)]"
+              title="Open full 3D Living System Flow"
+            >
+              <Sparkles className="w-3 h-3 text-cyan-400 animate-pulse" />
+              <span>3D FLOW</span>
+            </button>
+          )}
+
+          <button
+            onClick={() => setIsExpanded(!isExpanded)}
+            className="flex items-center gap-1 text-[11px] font-mono text-slate-400 hover:text-white px-2 py-1 rounded-lg hover:bg-white/[0.05] transition-colors"
+          >
+            <span>{isExpanded ? 'Minimize' : 'Expand'}</span>
+            {isExpanded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+          </button>
+        </div>
       </div>
 
       {isExpanded && (

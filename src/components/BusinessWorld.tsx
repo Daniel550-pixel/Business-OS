@@ -105,8 +105,25 @@ function makeEdge(a: THREE.Vector3, b: THREE.Vector3, color = 0x4bdcff) {
   return new THREE.Line(geometry, material);
 }
 
+const DEFAULT_NODES: WorldNode[] = [];
+const DEFAULT_HIGHLIGHTED_NODE_IDS: string[] = [];
+const DEFAULT_HIERARCHY_ENTITIES: HierarchyEntity[] = [];
+const DEFAULT_EXECUTION_RECORDS: ExecutionRecord[] = [];
+const DEFAULT_ACTIVITY_TICKS: AIActivityTick[] = [];
+
 export const BusinessWorld: React.FC<BusinessWorldProps> = ({
-  nodes = [], selectedNode, onSelectNode, highlightedNodeIds = [], onQuickInspectNode, onExecutePolicyAction, hierarchyEntities = [], systemState = 'idle', activityTicks = [], currentEpoch = 'NOW', onEpochChange, executionRecords = [],
+  nodes = DEFAULT_NODES,
+  selectedNode,
+  onSelectNode,
+  highlightedNodeIds = DEFAULT_HIGHLIGHTED_NODE_IDS,
+  onQuickInspectNode,
+  onExecutePolicyAction,
+  hierarchyEntities = DEFAULT_HIERARCHY_ENTITIES,
+  systemState = 'idle',
+  activityTicks,
+  currentEpoch = 'NOW',
+  onEpochChange,
+  executionRecords = DEFAULT_EXECUTION_RECORDS,
 }) => {
   const mountRef = useRef<HTMLDivElement>(null);
   const sceneRef = useRef<{ scene:THREE.Scene; camera:THREE.PerspectiveCamera; renderer:THREE.WebGLRenderer; controls:OrbitControls; groups:Map<string,THREE.Group>; agents:THREE.Mesh[]; clock:THREE.Clock } | null>(null);
@@ -201,15 +218,19 @@ export const BusinessWorld: React.FC<BusinessWorldProps> = ({
 
   const active = entities.find(e => e.id === selectedId) || entities[0];
   const epochOrder: TemporalEpoch[] = ['JAN','FEB','MAR','APR','MAY','JUN','NOW','SIM_3M','SIM_6M'];
-  const [liveActivityTicks, setLiveActivityTicks] = useState<AIActivityTick[]>(activityTicks);
-  useEffect(() => setLiveActivityTicks(activityTicks), [activityTicks]);
+  const [liveActivityTicks, setLiveActivityTicks] = useState<AIActivityTick[]>(() => activityTicks || DEFAULT_ACTIVITY_TICKS);
+  useEffect(() => {
+    if (activityTicks) {
+      setLiveActivityTicks(activityTicks);
+    }
+  }, [activityTicks]);
   useEffect(() => {
     if (!playing || !hierarchySource.length) return;
     const id = window.setInterval(() => {
       const critical = hierarchySource.filter(e => e.status === 'critical' || e.signals?.some(s => s.type === 'risk')).sort((a,b) => a.healthScore-b.healthScore);
       const target = critical[Math.floor(Date.now()/5000) % Math.max(1, critical.length)];
       if (!target) return;
-      setLiveActivityTicks(prev => [{
+      const newTick: AIActivityTick = {
         id: `live_${Date.now()}`,
         timestamp: new Date().toLocaleTimeString('en-US',{hour12:false}),
         agentName: target.ownerAgent,
@@ -219,7 +240,8 @@ export const BusinessWorld: React.FC<BusinessWorldProps> = ({
         category: 'reasoning',
         confidence: Math.min(99, Math.max(72, target.healthScore + 8)),
         entityId: target.id,
-      }, ...prev].slice(0, 24));
+      };
+      setLiveActivityTicks(prev => [newTick, ...(prev || [])].slice(0, 24));
     }, 5000);
     return () => window.clearInterval(id);
   }, [playing, hierarchySource]);
@@ -474,18 +496,24 @@ export const BusinessWorld: React.FC<BusinessWorldProps> = ({
     return()=>window.clearInterval(id);
   },[playing]);
 
-  useEffect(()=>{
-    if(!simulation || !playing || !onEpochChange) return;
-    const id=window.setInterval(()=>{
+  const onEpochChangeRef = useRef(onEpochChange);
+  useEffect(() => {
+    onEpochChangeRef.current = onEpochChange;
+  }, [onEpochChange]);
+
+  useEffect(() => {
+    if (!simulation || !playing) return;
+    const id = window.setInterval(() => {
+      if (!onEpochChangeRef.current) return;
       const next = epochOrder[(epochOrder.indexOf(currentEpoch) + 1) % epochOrder.length];
-      onEpochChange(next);
+      onEpochChangeRef.current(next);
     }, 3500);
-    return()=>window.clearInterval(id);
-  },[simulation,playing,currentEpoch,onEpochChange]);
+    return () => window.clearInterval(id);
+  }, [simulation, playing, currentEpoch]);
 
   const changeEpoch=(delta:number)=>{
     const nextIndex=Math.min(epochOrder.length-1,Math.max(0,temporalIndex+delta));
-    onEpochChange?.(epochOrder[nextIndex]);
+    onEpochChangeRef.current?.(epochOrder[nextIndex]);
   };
 
   return (
@@ -505,7 +533,7 @@ export const BusinessWorld: React.FC<BusinessWorldProps> = ({
           <button onClick={()=>changeEpoch(-1)} className="px-2 py-1.5 rounded-lg border border-white/10 text-[9px] font-mono text-slate-400 hover:text-white">−TIME</button>
           <span className="px-2 py-1.5 rounded-lg border border-cyan-400/20 text-[9px] font-mono text-cyan-200">{currentEpoch}</span>
           <button onClick={()=>changeEpoch(1)} className="px-2 py-1.5 rounded-lg border border-white/10 text-[9px] font-mono text-slate-400 hover:text-white">+TIME</button>
-          <button onClick={()=>setPlaying(v=>!v) className="p-2 rounded-lg hover:bg-white/10 text-slate-300" title={playing?'Pause telemetry':'Resume telemetry'}>{playing?<Pause size={15}/>:<Play size={15}/>}</button>
+          <button onClick={()=>setPlaying(v=>!v)} className="p-2 rounded-lg hover:bg-white/10 text-slate-300" title={playing?'Pause telemetry':'Resume telemetry'}>{playing?<Pause size={15}/>:<Play size={15}/>}</button>
           <button onClick={()=>setSimulation(v=>!v)} className={`px-2.5 py-1.5 rounded-lg border text-[10px] font-mono ${simulation?'border-violet-400/40 text-violet-300':'border-white/10 text-slate-400'}`}>SIM</button>
           <button onClick={resetCamera} className="p-2 rounded-lg hover:bg-white/10 text-slate-300" title="Reset camera"><RotateCcw size={15}/></button>
         </div>
