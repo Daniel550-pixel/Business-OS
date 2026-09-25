@@ -15,7 +15,7 @@ dotenv.config();
 const app = express();
 const PORT = 3000;
 
-app.use(express.json());
+app.use(express.json({ limit: process.env.BUSINESS_OS_HTTP_BODY_LIMIT || '8mb' }));
 
 app.use((req, _res, next) => {
   const ignored = req.path === '/api/health' || req.path.startsWith('/api/security/');
