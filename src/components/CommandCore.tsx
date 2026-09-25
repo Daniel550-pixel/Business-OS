@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   Sparkles,
   Send,
@@ -50,6 +50,9 @@ export const CommandCore: React.FC<CommandCoreProps> = ({
   const [isProcessing, setIsProcessing] = useState(false);
   const [analysisSteps, setAnalysisSteps] = useState<string[]>([]);
   const [result, setResult] = useState<AICommandResponse | null>(null);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const textareaRef = useRef<HTMLTextAreaElement | null>(null);
+  const MAX_PROMPT_CHARS = 1_500_000;
 
   const sampleQueries = [
     'Investigate the enterprise revenue anomaly and cause analysis.',
@@ -62,6 +65,7 @@ export const CommandCore: React.FC<CommandCoreProps> = ({
   const handleRunCommand = async (queryToRun?: string) => {
     const query = queryToRun || inputQuery;
     if (!query.trim()) return;
+    if (query.length > MAX_PROMPT_CHARS) return;
 
     const lower = query.toLowerCase();
 
@@ -201,25 +205,25 @@ export const CommandCore: React.FC<CommandCoreProps> = ({
       {/* Input Prompt Form */}
       <div className="p-4 space-y-3">
         <form
-          onSubmit={(e) => {
-            e.preventDefault();
-            handleRunCommand();
-          }}
-          className="relative flex items-center"
+          onSubmit={(e) => { e.preventDefault(); handleRunCommand(); }}
+          className="cinematic-prompt-form"
         >
-          <input
+          <textarea
+            ref={textareaRef}
             id="command-core-input"
             name="command"
-            type="text"
+            rows={4}
             value={inputQuery}
-            onChange={(e) => setInputQuery(e.target.value)}
-            placeholder="Type business intent: 'Analyze why revenue dropped this week and what we should investigate'..."
-            className="w-full pl-4 pr-24 py-3 rounded-lg bg-black/40 border border-white/10 text-sm text-slate-100 placeholder:text-slate-500 focus:outline-none focus:border-cyan-500/60 focus:ring-1 focus:ring-cyan-500/30 font-mono transition-all"
+            onChange={(e) => setInputQuery(e.target.value.slice(0, MAX_PROMPT_CHARS))}
+            onKeyDown={(e) => { if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') { e.preventDefault(); handleRunCommand(); } }}
+            placeholder="Describe the business state, objective, constraint, evidence or question you want the system to investigate…"
+            className="cinematic-prompt-input"
           />
+          <div className="cinematic-prompt-meta"><span>{inputQuery.length.toLocaleString()} / {MAX_PROMPT_CHARS.toLocaleString()} chars</span><span>⌘/Ctrl + Enter to analyze</span></div>
           <button
             type="submit"
-            disabled={isProcessing || !inputQuery.trim()}
-            className="absolute right-2 px-3 py-1.5 rounded-md bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white text-xs font-medium transition-all disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-1.5 shadow-[0_0_12px_rgba(6,182,212,0.3)]"
+            disabled={isProcessing || !inputQuery.trim() || inputQuery.length > MAX_PROMPT_CHARS}
+            className="cinematic-prompt-submit"
           >
             {isProcessing ? (
               <>
@@ -444,9 +448,22 @@ export const CommandCore: React.FC<CommandCoreProps> = ({
 
   if (isOpenAsModal) {
     return (
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-200">
-        <div className="w-full max-w-3xl max-h-[90vh] overflow-y-auto no-scrollbar">
-          {containerContent}
+      <div className="cinematic-command-overlay">
+        <div className="cinematic-command-backdrop" onClick={onCloseModal} />
+        <div className="cinematic-command-modal">
+          <header className="cinematic-modal-header">
+            <button type="button" className="cinematic-wordmark" onClick={() => setMenuOpen((v) => !v)}>Business<em>OS</em></button>
+            <button type="button" className="cinematic-menu-button" onClick={() => setMenuOpen((v) => !v)} aria-expanded={menuOpen}>
+              <span>{menuOpen ? 'Close' : 'Menu'}</span><i /><i />
+            </button>
+          </header>
+          <div className="cinematic-modal-stage">
+            <div className="cinematic-orbit-field" aria-hidden="true"><span/><span/><span/><b>AI</b></div>
+            <div className="cinematic-command-heading"><span>FIELD COMMAND</span><i/><span>POLICY-GATED INTELLIGENCE</span></div>
+            {containerContent}
+          </div>
+          <footer className="cinematic-modal-footer"><span>AI DECIDES ≠ AI EXECUTES</span><span>EVENT LEDGER · POLICY GATE · AGENT RUNTIME</span></footer>
+          {menuOpen && <div className="cinematic-full-menu" role="dialog"><button onClick={() => setMenuOpen(false)}>Close</button><nav><button onClick={() => setMenuOpen(false)}>Command</button><button onClick={() => { setMenuOpen(false); onCloseModal?.(); onNavigateToView?.('business-world'); }}>Business World</button><button onClick={() => { setMenuOpen(false); onCloseModal?.(); onNavigateToView?.('missions'); }}>Missions</button><button onClick={() => { setMenuOpen(false); onCloseModal?.(); onNavigateToView?.('cyber-hud'); }}>Security</button></nav></div>}
         </div>
       </div>
     );
