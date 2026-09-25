@@ -9,6 +9,7 @@ import { detectIncidents, listIncidents, updateIncident } from './server/securit
 import { createProvenanceRecord, verifyProvenanceRecord } from './server/security/provenance.js';
 import { createVaultProvenance, verifyVaultProvenance } from './server/security/vaultProvenance.js';
 import { executeSecurityResponse, executeRollbackResponse } from './server/security/responseRuntime.js';
+import { createPromptEnvelope } from './server/promptRuntime.js';
 
 dotenv.config();
 
