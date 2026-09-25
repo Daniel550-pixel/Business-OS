@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-const { createPromptEnvelope, DEFAULT_MAX_PROMPT_CHARS, DEFAULT_MAX_CONTEXT_CHARS } = await import('../server/promptRuntime.ts');
+const { createPromptEnvelope, chunkPrompt, DEFAULT_MAX_PROMPT_CHARS, DEFAULT_MAX_CONTEXT_CHARS } = await import('../server/promptRuntime.ts');
 const largePrompt = 'Business intent '.repeat(50_000) + 'Analyze the complete operating system.';
 const envelope = createPromptEnvelope(largePrompt, { arr: '$24.84M', runway: '22.4 mos' });
 assert.equal(envelope.prompt, largePrompt.normalize('NFC'));
@@ -12,3 +12,13 @@ assert.throws(() => createPromptEnvelope('valid', 'x'.repeat(DEFAULT_MAX_CONTEXT
 assert.throws(() => createPromptEnvelope('   '), /cannot be empty/);
 assert.throws(() => createPromptEnvelope(123), /must be a string/);
 console.log('prompt-runtime: PASS');
+
+const chunkedPrompt = '0123456789'.repeat(70_000);
+const chunks = chunkPrompt(chunkedPrompt, 240_000);
+assert.equal(chunks.length, 3);
+assert.equal(chunks.map((chunk) => chunk.text).join(''), chunkedPrompt);
+assert.equal(chunks[0].start, 0);
+assert.equal(chunks[2].end, chunkedPrompt.length);
+assert.equal(chunks.every((chunk) => chunk.total === 3), true);
+assert.deepEqual(chunkPrompt('short', 240_000)[0], { index: 1, total: 1, start: 0, end: 5, text: 'short' });
+assert.throws(() => chunkPrompt('x', 0), /positive integer/);
