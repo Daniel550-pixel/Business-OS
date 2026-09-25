@@ -691,3 +691,39 @@ body{
 .neural-flow-overlay.is-visible{transform:translateY(0)}
 @media(max-width:900px){.neural-flow-overlay{left:50%;right:auto;bottom:68px;transform:translate(-50%,18px)}.neural-flow-overlay.is-visible{transform:translate(-50%,0)}.planetary-edge-readout{display:none}}
 @media(prefers-reduced-motion:reduce){.planetary-atmosphere-video{animation:none}.planetary-orbit-grid i{animation:none}.neural-flow-overlay,.neural-flow-overlay.is-visible{transition:none}}
+
+/* Planetary field depth response: the environment follows the application as the operator scrolls. */
+.planetary-atmosphere{
+  --planetary-scroll-progress: var(--planetary-scroll-progress, 0);
+  opacity:calc(.78 + (var(--planetary-scroll-progress) * .12));
+}
+.planetary-atmosphere-video{
+  opacity:calc(.30 + (var(--planetary-scroll-progress) * .10));
+  transform:scale(calc(1 + (var(--planetary-scroll-progress) * .035)));
+  transition:opacity .35s ease,transform .5s ease;
+}
+.planetary-atmosphere-veil{
+  background:
+    radial-gradient(
+      ellipse calc(62% + (var(--planetary-scroll-progress) * 12%)) calc(62% + (var(--planetary-scroll-progress) * 10%))
+      at 50% calc(46% + (var(--planetary-scroll-progress) * 4%)),
+      rgba(0,12,24,.05),
+      rgba(0,5,12,calc(.58 + (var(--planetary-scroll-progress) * .08))) 68%,
+      rgba(0,3,8,.90) 100%
+    ),
+    linear-gradient(180deg,rgba(0,4,10,.35),rgba(0,5,12,.78));
+}
+.planetary-orbit-grid{
+  transform:translate(-50%,-50%) scale(calc(1 + (var(--planetary-scroll-progress) * .08)));
+  opacity:calc(.17 + (var(--planetary-scroll-progress) * .10));
+  transition:opacity .45s ease,transform .6s ease;
+}
+.neural-flow-stage-id{
+  display:inline-block;
+  margin-left:10px;
+  color:rgba(103,232,249,.45);
+  font-style:normal;
+}
+@media(prefers-reduced-motion:reduce){
+  .planetary-atmosphere-video,.planetary-orbit-grid{transition:none}
+}
