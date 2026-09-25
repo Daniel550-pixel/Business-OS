@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import {
   Activity,
-  Globe,
   Compass,
   Cpu,
   DollarSign,
@@ -75,9 +74,7 @@ export const Navigation: React.FC<NavigationProps> = ({
 
   const navItems: { id: ViewMode; label: string; icon: React.ReactNode; badge?: number | string; badgeColor?: string }[] = [
     { id: 'command-center', label: 'Command Center', icon: <Command className="w-3.5 h-3.5" /> },
-    { id: 'system-flow', label: 'Living 3D Flow', icon: <Sparkles className="w-3.5 h-3.5 text-cyan-400 animate-pulse" />, badge: 'LIVE 3D', badgeColor: 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 shadow-[0_0_8px_rgba(6,182,212,0.4)]' },
     { id: 'cyber-hud', label: 'Cyber HUD Deck', icon: <Zap className="w-3.5 h-3.5 text-amber-400" />, badge: 'HUD', badgeColor: 'bg-gradient-to-r from-[#ff8800] to-[#ff007a] text-white shadow-[0_0_8px_rgba(255,0,122,0.6)]' },
-    { id: 'business-world', label: 'Digital Twin (L1-L5)', icon: <Globe className="w-3.5 h-3.5" />, badge: criticalAnomaliesCount > 0 ? criticalAnomaliesCount : undefined, badgeColor: 'bg-rose-500/20 text-rose-400 border border-rose-500/30' },
     { id: 'missions', label: 'Missions', icon: <Compass className="w-3.5 h-3.5" />, badge: activeMissionsCount, badgeColor: 'bg-cyan-500/20 text-cyan-400 border border-cyan-500/30' },
     { id: 'agents', label: 'AI Agents', icon: <Cpu className="w-3.5 h-3.5" />, badge: 8, badgeColor: 'bg-indigo-500/20 text-indigo-300 border border-indigo-500/30' },
     { id: 'finance', label: 'Finance', icon: <DollarSign className="w-3.5 h-3.5" /> },
