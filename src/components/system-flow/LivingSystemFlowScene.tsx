@@ -30,6 +30,25 @@ export const LivingSystemFlowScene: React.FC<LivingSystemFlowSceneProps> = ({
 }) => {
   const mountRef = useRef<HTMLDivElement>(null);
   const [hoveredStage, setHoveredStage] = useState<FlowStageNode | null>(null);
+  const activeNeuralStageRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    const stageMap: Record<string, string> = {
+      neural: 'uae-world-model',
+      command: 'understand-perception',
+      reasoning: 'reason-cognition',
+      evidence: 'simulate-predict',
+      policy: 'verify-prove',
+      ledger: 'authorized-act',
+    };
+    const handleNeuralFlow = (event: Event) => {
+      const detail = (event as CustomEvent<{ stage?: string; stageId?: string }>).detail || {};
+      activeNeuralStageRef.current =
+        detail.stageId || (detail.stage ? stageMap[detail.stage] : null) || null;
+    };
+    window.addEventListener('business-os:neural-flow', handleNeuralFlow);
+    return () => window.removeEventListener('business-os:neural-flow', handleNeuralFlow);
+  }, []);
 
   // References to mutable Three.js objects
   const sceneRef = useRef<THREE.Scene | null>(null);
@@ -529,6 +548,14 @@ export const LivingSystemFlowScene: React.FC<LivingSystemFlowSceneProps> = ({
         const stage = root.userData?.stage as FlowStageNode | undefined;
         if (stage) {
           onSelectStage(stage);
+          activeNeuralStageRef.current = stage.id;
+          window.dispatchEvent(new CustomEvent('business-os:neural-flow', {
+            detail: {
+              stageId: stage.id,
+              label: stage.shortName.toUpperCase(),
+              detail: `${stage.phase} node selected. Planetary intelligence linked to ${stage.systemLinkLabel}.`,
+            },
+          }));
           cyberAudio.playNodeSelect(580);
           jarvisVoice.speak(stage.voiceScript);
         }
@@ -639,17 +666,45 @@ export const LivingSystemFlowScene: React.FC<LivingSystemFlowSceneProps> = ({
         const reticle = group.getObjectByName('reticle') as THREE.Mesh | undefined;
         const isHovered = hoveredStage && hoveredStage.id === stage.id;
         const isSelected = selectedStageId === stage.id;
+        const isNeuralActive = activeNeuralStageRef.current === stage.id;
 
         if (reticle) {
           reticle.rotation.z += delta * 0.8;
           reticle.lookAt(camera.position);
           const retMat = reticle.material as THREE.MeshBasicMaterial;
-          retMat.opacity = isSelected ? 0.9 : isHovered ? 0.5 : 0.0;
+          retMat.opacity = isSelected ? 0.9 : isNeuralActive ? 0.78 : isHovered ? 0.5 : 0.0;
         }
 
-        // Hover scale
-        const targetScale = isSelected ? 1.22 : isHovered ? 1.12 : 1.0;
-        group.scale.lerp(new THREE.Vector3(targetScale, targetScale, targetScale), delta * 6);
+        const bodyMaterial = bodyMesh.material as THREE.MeshStandardMaterial;
+        const atmosphereMaterial = atmosphereMesh?.material as THREE.MeshBasicMaterial | undefined;
+        const cloudMaterial = cloudMesh?.material as THREE.MeshStandardMaterial | undefined;
+        const targetEmissive = isNeuralActive ? 1.15 : isSelected ? 0.65 : 0.25;
+        bodyMaterial.emissiveIntensity = THREE.MathUtils.lerp(bodyMaterial.emissiveIntensity, targetEmissive, delta * 5);
+        if (atmosphereMaterial) {
+          atmosphereMaterial.opacity = THREE.MathUtils.lerp(
+            atmosphereMaterial.opacity,
+            isNeuralActive ? 0.62 : 0.32,
+            delta * 5
+          );
+        }
+        if (cloudMaterial) {
+          cloudMaterial.opacity = THREE.MathUtils.lerp(
+            cloudMaterial.opacity,
+            isNeuralActive ? 0.48 : 0.22,
+            delta * 5
+          );
+        }
+
+        // Hover / live-stage scale
+        const targetScale = isNeuralActive ? 1.14 : isSelected ? 1.22 : isHovered ? 1.12 : 1.0;
+        group.scale.lerp(
+          new THREE.Vector3(targetScale, targetScale, targetScale),
+          delta * (isNeuralActive ? 8 : 6)
+        );
+        if (isNeuralActive) {
+          const pulse = 1 + Math.sin(time * 4.2) * 0.035;
+          group.scale.multiplyScalar(pulse);
+        }
       });
 
       // Camera Smooth Interpolation

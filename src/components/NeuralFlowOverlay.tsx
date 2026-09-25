@@ -14,6 +14,7 @@ interface NeuralFlowEventDetail {
   label?: string;
   detail?: string;
   requestId?: string;
+  stageId?: string;
 }
 
 const STAGES: { id: NeuralStage; label: string; icon: React.ElementType }[] = [
@@ -85,7 +86,10 @@ export const NeuralFlowOverlay: React.FC<NeuralFlowOverlayProps> = ({
       </div>
 
       <div className="neural-flow-detail">
-        <span>{eventState.detail || 'Waiting for the next operator intent.'}</span>
+        <span>
+          {eventState.detail || 'Waiting for the next operator intent.'}
+          {eventState.stageId && <em className="neural-flow-stage-id">{eventState.stageId}</em>}
+        </span>
         {pendingApprovalsCount > 0 && derivedStage === 'policy' && (
           <b>{pendingApprovalsCount} ACTION{pendingApprovalsCount === 1 ? '' : 'S'} AWAITING HUMAN AUTHORIZATION</b>
         )}

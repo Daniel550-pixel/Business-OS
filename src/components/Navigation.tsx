@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import {
   Activity,
-  Globe,
   Compass,
   Cpu,
   DollarSign,
@@ -52,8 +51,33 @@ export const Navigation: React.FC<NavigationProps> = ({
   geminiActive = true,
 }) => {
   const [time, setTime] = useState<string>('');
+  const [fps, setFps] = useState(60);
   const activeCurrentView = activeView || currentView || 'command-center';
   const handleOpenPrompt = onOpenCommandCore || onOpenCommandPalette || (() => {});
+
+  useEffect(() => {
+    let frame = 0;
+    let last = performance.now();
+    let smoothed = 60;
+    let lastUiUpdate = last;
+
+    const measure = (now: number) => {
+      const delta = now - last;
+      last = now;
+      if (delta > 0 && delta < 1000) {
+        const instant = Math.min(144, 1000 / delta);
+        smoothed += (instant - smoothed) * 0.08;
+        if (now - lastUiUpdate >= 250) {
+          setFps(Math.max(1, Math.round(smoothed)));
+          lastUiUpdate = now;
+        }
+      }
+      frame = requestAnimationFrame(measure);
+    };
+
+    frame = requestAnimationFrame(measure);
+    return () => cancelAnimationFrame(frame);
+  }, []);
 
   useEffect(() => {
     const updateTime = () => {
@@ -75,9 +99,7 @@ export const Navigation: React.FC<NavigationProps> = ({
 
   const navItems: { id: ViewMode; label: string; icon: React.ReactNode; badge?: number | string; badgeColor?: string }[] = [
     { id: 'command-center', label: 'Command Center', icon: <Command className="w-3.5 h-3.5" /> },
-    { id: 'system-flow', label: 'Living 3D Flow', icon: <Sparkles className="w-3.5 h-3.5 text-cyan-400 animate-pulse" />, badge: 'LIVE 3D', badgeColor: 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 shadow-[0_0_8px_rgba(6,182,212,0.4)]' },
     { id: 'cyber-hud', label: 'Cyber HUD Deck', icon: <Zap className="w-3.5 h-3.5 text-amber-400" />, badge: 'HUD', badgeColor: 'bg-gradient-to-r from-[#ff8800] to-[#ff007a] text-white shadow-[0_0_8px_rgba(255,0,122,0.6)]' },
-    { id: 'business-world', label: 'Digital Twin (L1-L5)', icon: <Globe className="w-3.5 h-3.5" />, badge: criticalAnomaliesCount > 0 ? criticalAnomaliesCount : undefined, badgeColor: 'bg-rose-500/20 text-rose-400 border border-rose-500/30' },
     { id: 'missions', label: 'Missions', icon: <Compass className="w-3.5 h-3.5" />, badge: activeMissionsCount, badgeColor: 'bg-cyan-500/20 text-cyan-400 border border-cyan-500/30' },
     { id: 'agents', label: 'AI Agents', icon: <Cpu className="w-3.5 h-3.5" />, badge: 8, badgeColor: 'bg-indigo-500/20 text-indigo-300 border border-indigo-500/30' },
     { id: 'finance', label: 'Finance', icon: <DollarSign className="w-3.5 h-3.5" /> },
@@ -152,7 +174,7 @@ export const Navigation: React.FC<NavigationProps> = ({
             <span className="text-slate-500">•</span>
             <span className="text-slate-300">{time || '00:00:00 UTC'}</span>
             <span className="text-slate-500">•</span>
-            <span className="text-slate-400">p99 42ms</span>
+            <span className="text-slate-400">FPS {fps}</span><span className="text-slate-500">•</span><span className="text-slate-400">p99 42ms</span>
           </div>
         </div>
 

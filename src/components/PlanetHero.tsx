@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   ChevronDown,
   Sparkles,
@@ -37,6 +37,18 @@ export const PlanetHero: React.FC<PlanetHeroProps> = ({
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [heroMode, setHeroMode] = useState<'3d-flow' | 'planet-orbit'>('3d-flow');
+
+  useEffect(() => {
+    const hero = document.querySelector('.cinematic-business-hero');
+    if (!hero) return;
+    const observer = new IntersectionObserver(([entry]) => {
+      window.dispatchEvent(new CustomEvent('business-os:planetary-visibility', {
+        detail: { visible: entry.isIntersecting, ratio: entry.intersectionRatio },
+      }));
+    }, { threshold: [0, 0.25, 0.5, 0.75, 1] });
+    observer.observe(hero);
+    return () => observer.disconnect();
+  }, []);
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();

@@ -25,9 +25,7 @@ import { ExecutiveCockpit } from './components/ExecutiveCockpit';
 import { AIIntelligenceLayer } from './components/AIIntelligenceLayer';
 import { AIActivityStream } from './components/AIActivityStream';
 import { SecurityHUD } from './components/SecurityHUD';
-import { PlanetHero } from './components/PlanetHero';
-import { PlanetaryAtmosphere } from './components/PlanetaryAtmosphere';
-import { NeuralFlowOverlay } from './components/NeuralFlowOverlay';
+import { AgentScreen } from './components/AgentScreen';
 
 import {
   initialMetrics,
@@ -39,12 +37,12 @@ import {
   initialEvents,
   initialPendingActions,
   initialExecutionRecords,
+  initialAIActivityStreamTicks,
 } from './data/mockBusinessState';
 
 import {
   initialHierarchyEntities,
   initialFocusObjectives,
-  initialAIActivityStreamTicks,
   initialTemporalSnapshots,
 } from './data/digitalTwinData';
 
@@ -177,7 +175,6 @@ export default function App() {
   // AI Activity stream ticks
   const [activityTicks, setActivityTicks] = useState(initialAIActivityStreamTicks);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
-  const [showBackToPlanet, setShowBackToPlanet] = useState(false);
 
   // The browser keeps only proposal state; the durable execution ledger is server-authoritative.
   useEffect(() => {
@@ -223,27 +220,6 @@ export default function App() {
 
     return () => window.removeEventListener('storage', syncPendingActions);
   }, []);
-
-  useEffect(() => {
-    const handleScroll = () => {
-      setShowBackToPlanet(window.scrollY > 350);
-    };
-    window.addEventListener('scroll', handleScroll, { passive: true });
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
-
-  const handleScrollToDashboard = () => {
-    const el = document.getElementById('dashboard-viewport');
-    if (el) {
-      el.scrollIntoView({ behavior: 'smooth' });
-    } else {
-      window.scrollTo({ top: 780, behavior: 'smooth' });
-    }
-  };
-
-  const handleScrollToTop = () => {
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
 
   const showToast = (msg: string) => {
     setToastMessage(msg);
@@ -310,7 +286,8 @@ export default function App() {
       ]);
       setApprovalAction(null);
       setSystemState('mission_executing');
-      window.dispatchEvent(new CustomEvent('business-os:neural-flow', { detail: { stage: 'ledger', label: 'EXECUTION LEDGER', detail: 'Server-authoritative execution record committed and reconciled.' } }));
+      window.dispatchEvent(new CustomEvent('business-os:neural-flow', { detail: { stage: 'ledger',
+    stageId: 'authorized-act', label: 'EXECUTION LEDGER', detail: 'Server-authoritative execution record committed and reconciled.' } }));
       showToast(`Verified external mutation: "${action.title}" via Policy Gate`);
     } catch (error) {
       console.error('Policy Gate execution failed:', error);
@@ -439,17 +416,26 @@ export default function App() {
 
   return (
     <div className={`business-os-shell min-h-screen text-slate-100 flex flex-col selection:bg-cyan-500/30 selection:text-cyan-200 transition-all duration-300 ${getContainerStateClass()}`}>
-      <PlanetaryAtmosphere />
-      <div className="business-os-cinematic-bg" aria-hidden="true">
-        <video id="businessOsBgA" className="business-os-bg-video is-active" autoPlay muted loop playsInline preload="auto" disablePictureInPicture poster="https://d2ol7oe51mr4n9cf9b4n9.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/82e7eb75-c65f-490a-99b5-f3d1cad54200.webp">
-          <source src="https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260912_104036_bd6924f6-3c8e-417e-8465-6d03c8c2e9e6.mp4" type="video/mp4" />
-        </video>
-        <video id="businessOsBgB" className="business-os-bg-video" muted loop playsInline preload="auto" disablePictureInPicture poster="https://d2ol7oe51mr4n9cf9b4n9.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/82e7eb75-c65f-490a-99b5-f3d1cad54200.webp">
-          <source src="https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260912_104036_bd6924f6-3c8e-417e-8465-6d03c8c2e9e6.mp4" type="video/mp4" />
-        </video>
-        <div className="business-os-cinematic-veil" />
-      </div>
-      <NeuralFlowOverlay systemState={systemState} pendingApprovalsCount={pendingActions.length} />
+      <section className="business-os-planet-header" aria-label="Business OS planetary runtime field">
+        <div className="business-os-planet-media" aria-hidden="true">
+          <video id="businessOsBgA" className="business-os-bg-video is-active" autoPlay muted loop playsInline preload="auto" disablePictureInPicture poster="https://d2ol7oe51mr4n9cf9b4n9.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/82e7eb75-c65f-490a-99b5-f3d1cad54200.webp">
+            <source src="https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260912_104036_bd6924f6-3c8e-417e-8465-6d03c8c2e9e6.mp4" type="video/mp4" />
+          </video>
+          <video id="businessOsBgB" className="business-os-bg-video" muted loop playsInline preload="auto" disablePictureInPicture poster="https://d2ol7oe51mr4n9cf9b4n9.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/82e7eb75-c65f-490a-99b5-f3d1cad54200.webp">
+            <source src="https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260912_104036_bd6924f6-3c8e-417e-8465-6d03c8c2e9e6.mp4" type="video/mp4" />
+          </video>
+          <div className="business-os-planet-veil" />
+          <div className="business-os-planet-scanline" />
+        </div>
+        <div className="business-os-planet-label">
+          <span>PLANETARY RUNTIME FIELD</span>
+          <strong>BUSINESS REALITY // LIVE</strong>
+        </div>
+        <div className="business-os-planet-meta">
+          <span>ENVIRONMENT ONLINE</span>
+          <span>REALITY → AGENT RUNTIME</span>
+        </div>
+      </section>
 
       {/* Telemetry Header & View Switcher */}
       <Navigation
@@ -465,7 +451,8 @@ export default function App() {
         pendingApprovalsCount={pendingActions.length}
         onOpenCommandCore={() => {
           setIsCommandModalOpen(true);
-          window.dispatchEvent(new CustomEvent('business-os:neural-flow', { detail: { stage: 'command', label: 'COMMAND CORE', detail: 'Operator intent channel opened. Awaiting analysis input.' } }));
+          window.dispatchEvent(new CustomEvent('business-os:neural-flow', { detail: { stage: 'command',
+    stageId: 'understand-perception', label: 'COMMAND CORE', detail: 'Operator intent channel opened. Awaiting analysis input.' } }));
         }}
       />
 
@@ -501,145 +488,43 @@ export default function App() {
           />
         ) : (
           <>
-            {/* Open Planet UI: Expansive, unobstructed hero showcasing the celestial 3D world */}
-            {(activeView === 'command-center' || activeView === 'command') && (
-              <PlanetHero
-                onScrollToDashboard={handleScrollToDashboard}
+            {/* Unified Agent Screen: business reality and planetary runtime are one interface. */}
+            {(activeView === 'command-center' || activeView === 'command' || activeView === 'business-world' || activeView === 'world') && (
+              <AgentScreen
+                systemState={systemState}
+                agents={agents}
+                missions={missions}
+                nodes={nodes}
+                selectedNode={selectedNode}
+                pendingActions={pendingActions}
+                executionRecords={executionRecords}
+                activityTicks={activityTicks}
+                metrics={metrics}
+                onSelectNode={setSelectedNode}
+                onExecuteAction={handleOpenActionApproval}
                 onOpenCommandCore={() => {
                   setIsCommandModalOpen(true);
-                  window.dispatchEvent(new CustomEvent('business-os:neural-flow', { detail: { stage: 'command', label: 'COMMAND CORE', detail: 'Operator intent channel opened. Awaiting analysis input.' } }));
+                  window.dispatchEvent(new CustomEvent('business-os:neural-flow', {
+                    detail: {
+                      stage: 'command',
+                      stageId: 'understand-perception',
+                      label: 'AGENT COMMAND',
+                      detail: 'Operator intent channel opened. Awaiting analysis input.',
+                    },
+                  }));
                 }}
-                onNavigateToView={(v) => {
-                  setActiveView(v);
+                onOpenEvidence={(title, claim, confidence) => handleOpenEvidence(title, claim, confidence)}
+                onNavigateToView={(view) => {
+                  setActiveView(view);
                   setActiveFocusObjective(null);
                 }}
-                systemState={systemState}
-                pendingApprovalsCount={pendingActions.length}
-                activeMissionsCount={missions.length}
               />
             )}
-
-            {/* Dashboard Container: Smoothly scrolled to from the Planet UI */}
-            <div id="dashboard-viewport" className="space-y-6 scroll-mt-14">
-              {/* Persistent AI Intelligence Presence Loop (Top of Command & Business World) */}
-              {(activeView === 'command-center' || activeView === 'command' || activeView === 'business-world') && (
-                <AIIntelligenceLayer
-                  systemState={systemState}
-                  onSelectStep={(step) => showToast(`Selected Reasoning Stage: ${step}`)}
-                  onOpenFocus={(objId) => handleTriggerFocus(objId)}
-                />
-              )}
-
-              {/* View: Command Center */}
-              {(activeView === 'command-center' || activeView === 'command') && (
-                <div className="space-y-6">
-                  <CommandCenter
-                    metrics={metrics}
-                    anomalies={anomalies}
-                    opportunities={opportunities}
-                    missions={missions}
-                    agents={agents}
-                    nodes={nodes}
-                    selectedNode={selectedNode}
-                    onSelectNode={setSelectedNode}
-                    events={events}
-                    pendingActions={pendingActions}
-                    recentExecutions={executionRecords}
-                    activityTicks={activityTicks}
-                    onExecuteAction={handleOpenActionApproval}
-                    onSelectMission={(m) => {
-                      setSelectedMission(m);
-                      setActiveView('missions');
-                    }}
-                    onSelectAgent={(ag) => {
-                      setSelectedAgent(ag);
-                      setActiveView('agents');
-                    }}
-                    onNavigateToView={setActiveView}
-                  />
-
-                  {/* AI Live Activity Stream */}
-                  <AIActivityStream
-                    ticks={activityTicks}
-                    onSelectEntity={(entityId) => {
-                      const match = initialHierarchyEntities.find((e) => e.id === entityId);
-                      if (match) setSelectedSpatialEntity(match);
-                    }}
-                    onOpenApproval={() => {
-                      if (pendingActions.length > 0) {
-                        handleOpenActionApproval(pendingActions[0]);
-                      }
-                    }}
-                  />
-                </div>
-              )}
-            </div>
 
             {/* View: Security Layer — authoritative security telemetry surface */}
             {activeView === 'cyber-hud' && <SecurityHUD />}
 
-            {/* View: Business World & Digital Twin Hierarchy */}
-            {(activeView === 'business-world' || activeView === 'world') && (
-              <div className="space-y-6">
-                <DigitalTwinHierarchy
-                  onSelectEntity={(entity) => setSelectedSpatialEntity(entity)}
-                  onExplainEvidence={(entity) => {
-                    if (entity.evidence) {
-                      handleOpenEvidence(
-                        `${entity.name} Telemetry Evidence`,
-                        entity.summary,
-                        entity.healthScore,
-                        entity.evidence.primaryFactors,
-                        {
-                          transactionsCount: entity.evidence.transactionsCount,
-                          crmEventsCount: entity.evidence.crmEventsCount,
-                          historicalComparisons: entity.evidence.historicalComparisons,
-                          traces: entity.evidence.traces,
-                        }
-                      );
-                    }
-                  }}
-                  onInvestigateEntity={(entity) => {
-                    showToast(`Launching autonomous agent investigation into ${entity.name}`);
-                    setSystemState('investigating');
-                  }}
-                />
-
-                {/* Spatial Topology Graph */}
-                <div className="space-y-3 pt-4 border-t border-white/[0.08]">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h3 className="text-sm font-bold text-white uppercase font-mono">
-                        Spatial Relationship Topology Network
-                      </h3>
-                      <p className="text-xs text-slate-400">
-                        Interactive relationship mapping across revenue, customers, sales, operations, and autonomous swarms.
-                      </p>
-                    </div>
-                  </div>
-
-                  <BusinessWorld
-                    nodes={nodes}
-                    selectedNode={selectedNode}
-                    onSelectNode={setSelectedNode}
-                    highlightedNodeIds={highlightedNodeIds}
-                    hierarchyEntities={initialHierarchyEntities}
-                    systemState={systemState}
-                    activityTicks={activityTicks}
-                    currentEpoch={currentEpoch}
-                    onEpochChange={handleEpochChange}
-                    executionRecords={executionRecords}
-                    onExecutePolicyAction={handleOpenActionApproval}
-                    onQuickInspectNode={(nodeId) => {
-                      if (nodeId === 'sales') setActiveView('sales');
-                      else if (nodeId === 'revenue') setActiveView('finance');
-                      else if (nodeId === 'operations') setActiveView('operations');
-                      else if (nodeId === 'customers') setActiveView('customers');
-                    }}
-                  />
-                </div>
-              </div>
-            )}
+            {/* Business reality is now embedded directly in AgentScreen. The legacy standalone planet/digital-twin surface is intentionally removed. */}
 
             {/* View: Missions */}
             {activeView === 'missions' && (
@@ -840,18 +725,6 @@ export default function App() {
           setSystemState('risk_detected');
         }}
       />
-
-      {/* Floating Return to Planet UI button */}
-      {showBackToPlanet && (activeView === 'command-center' || activeView === 'command') && (
-        <button
-          onClick={handleScrollToTop}
-          className="fixed bottom-6 right-6 z-40 px-3.5 py-2 rounded-full bg-black/70 hover:bg-black/90 border border-cyan-500/40 text-cyan-300 hover:text-white font-mono text-xs flex items-center gap-2 backdrop-blur-xl shadow-[0_4px_24px_rgba(0,240,255,0.3)] hover:border-cyan-400 transition-all animate-in fade-in cursor-pointer group"
-          title="Return to Planet View"
-        >
-          <span className="text-cyan-400 group-hover:-translate-y-0.5 transition-transform font-bold">↑</span>
-          <span className="text-[11px] tracking-wider uppercase font-bold">PLANET UI</span>
-        </button>
-      )}
 
       {/* Subtle Toast Feedback */}
       {toastMessage && (
