@@ -416,15 +416,26 @@ export default function App() {
 
   return (
     <div className={`business-os-shell min-h-screen text-slate-100 flex flex-col selection:bg-cyan-500/30 selection:text-cyan-200 transition-all duration-300 ${getContainerStateClass()}`}>
-      <div className="business-os-cinematic-bg" aria-hidden="true">
-        <video id="businessOsBgA" className="business-os-bg-video is-active" autoPlay muted loop playsInline preload="auto" disablePictureInPicture poster="https://d2ol7oe51mr4n9cf9b4n9.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/82e7eb75-c65f-490a-99b5-f3d1cad54200.webp">
-          <source src="https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260912_104036_bd6924f6-3c8e-417e-8465-6d03c8c2e9e6.mp4" type="video/mp4" />
-        </video>
-        <video id="businessOsBgB" className="business-os-bg-video" muted loop playsInline preload="auto" disablePictureInPicture poster="https://d2ol7oe51mr4n9cf9b4n9.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/82e7eb75-c65f-490a-99b5-f3d1cad54200.webp">
-          <source src="https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260912_104036_bd6924f6-3c8e-417e-8465-6d03c8c2e9e6.mp4" type="video/mp4" />
-        </video>
-        <div className="business-os-cinematic-veil" />
-      </div>
+      <section className="business-os-planet-header" aria-label="Business OS planetary runtime field">
+        <div className="business-os-planet-media" aria-hidden="true">
+          <video id="businessOsBgA" className="business-os-bg-video is-active" autoPlay muted loop playsInline preload="auto" disablePictureInPicture poster="https://d2ol7oe51mr4n9cf9b4n9.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/82e7eb75-c65f-490a-99b5-f3d1cad54200.webp">
+            <source src="https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260912_104036_bd6924f6-3c8e-417e-8465-6d03c8c2e9e6.mp4" type="video/mp4" />
+          </video>
+          <video id="businessOsBgB" className="business-os-bg-video" muted loop playsInline preload="auto" disablePictureInPicture poster="https://d2ol7oe51mr4n9cf9b4n9.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/82e7eb75-c65f-490a-99b5-f3d1cad54200.webp">
+            <source src="https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260912_104036_bd6924f6-3c8e-417e-8465-6d03c8c2e9e6.mp4" type="video/mp4" />
+          </video>
+          <div className="business-os-planet-veil" />
+          <div className="business-os-planet-scanline" />
+        </div>
+        <div className="business-os-planet-label">
+          <span>PLANETARY RUNTIME FIELD</span>
+          <strong>BUSINESS REALITY // LIVE</strong>
+        </div>
+        <div className="business-os-planet-meta">
+          <span>ENVIRONMENT ONLINE</span>
+          <span>REALITY → AGENT RUNTIME</span>
+        </div>
+      </section>
 
       {/* Telemetry Header & View Switcher */}
       <Navigation
