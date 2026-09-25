@@ -1,0 +1,14 @@
+import assert from 'node:assert/strict';
+const { createPromptEnvelope, DEFAULT_MAX_PROMPT_CHARS, DEFAULT_MAX_CONTEXT_CHARS } = await import('../server/promptRuntime.ts');
+const largePrompt = 'Business intent '.repeat(50_000) + 'Analyze the complete operating system.';
+const envelope = createPromptEnvelope(largePrompt, { arr: '$24.84M', runway: '22.4 mos' });
+assert.equal(envelope.prompt, largePrompt.normalize('NFC'));
+assert.equal(envelope.promptChars, largePrompt.length);
+assert.ok(envelope.promptChars > 800_000);
+assert.match(envelope.requestId, /^prompt_/);
+assert.match(envelope.promptSha256, /^[a-f0-9]{64}$/);
+assert.throws(() => createPromptEnvelope('x'.repeat(DEFAULT_MAX_PROMPT_CHARS + 1)), /maximum supported size/);
+assert.throws(() => createPromptEnvelope('valid', 'x'.repeat(DEFAULT_MAX_CONTEXT_CHARS + 1)), /Business context exceeds/);
+assert.throws(() => createPromptEnvelope('   '), /cannot be empty/);
+assert.throws(() => createPromptEnvelope(123), /must be a string/);
+console.log('prompt-runtime: PASS');
