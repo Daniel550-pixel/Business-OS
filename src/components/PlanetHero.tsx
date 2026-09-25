@@ -44,9 +44,14 @@ export const PlanetHero: React.FC<PlanetHeroProps> = ({
   };
 
   return (
-    <section className="relative w-full flex flex-col justify-between items-center px-2 sm:px-4 lg:px-8 pt-4 pb-8 text-white select-none space-y-4">
+    <section className="cinematic-business-hero relative w-full flex flex-col justify-between items-center px-2 sm:px-4 lg:px-8 pt-4 pb-8 text-white select-none space-y-4">
+      <div className="cinematic-business-hero-copy" aria-label="Business OS introduction">
+        <span className="cinematic-business-eyebrow">BUSINESS OS // INTELLIGENCE OPERATING ENVIRONMENT</span>
+        <h1>See the business.<br /><em>Reason through the unknown.</em></h1>
+        <p>Continuous digital-twin intelligence, policy-gated reasoning and verified execution — without replacing the operational cockpit you already use.</p>
+      </div>
       {/* Top Floating Telemetry & Mode Selector Rail */}
-      <div className="w-full max-w-6xl flex flex-wrap items-center justify-between gap-3 text-[11px] font-mono z-10">
+      <div className="w-full max-w-6xl flex flex-wrap items-center justify-between gap-3 text-[11px] font-mono z-10 cinematic-hero-rail">
         <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-black/50 border border-white/10 backdrop-blur-xl shadow-[0_4px_20px_rgba(0,0,0,0.5)]">
           <span className="w-2 h-2 rounded-full bg-cyan-400 animate-ping" />
           <span className="text-slate-300 font-bold uppercase tracking-widest">
@@ -101,7 +106,7 @@ export const PlanetHero: React.FC<PlanetHeroProps> = ({
 
       {/* Main Hero Container: Living 3D Scene or Minimal Celestial View */}
       {heroMode === '3d-flow' ? (
-        <div className="w-full max-w-7xl relative my-1">
+        <div className="w-full max-w-7xl relative my-1 cinematic-hero-scene">
           <LivingSystemFlow3D
             isEmbedded={true}
             onNavigateToView={onNavigateToView}
@@ -109,7 +114,7 @@ export const PlanetHero: React.FC<PlanetHeroProps> = ({
           />
 
           {/* Quick Action Dock Below 3D Canvas */}
-          <div className="flex flex-wrap items-center justify-between gap-3 pt-3 px-2">
+          <div className="flex flex-wrap items-center justify-between gap-3 pt-3 px-2 cinematic-hero-actions">
             <div className="flex items-center gap-2">
               <button
                 onClick={onOpenCommandCore}
@@ -206,7 +211,7 @@ export const PlanetHero: React.FC<PlanetHeroProps> = ({
       )}
 
       {/* Bottom Floating Telemetry Cards Array */}
-      <div className="w-full max-w-5xl flex flex-col items-center justify-center gap-2 pt-2">
+      <div className="w-full max-w-5xl flex flex-col items-center justify-center gap-2 pt-2 cinematic-hero-telemetry">
         <div className="w-full grid grid-cols-2 md:grid-cols-4 gap-2.5 text-left font-mono">
           <div className="p-2.5 rounded-xl bg-black/40 border border-white/10 backdrop-blur-xl space-y-0.5">
             <div className="text-[9px] text-slate-400 uppercase">CAPITAL VECTOR</div>
