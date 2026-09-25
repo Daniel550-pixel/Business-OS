@@ -658,3 +658,36 @@ body{
 @keyframes neuralFlowPulse{50%{opacity:.35;transform:scale(.72)}}
 @media(max-width:720px){.neural-flow-overlay{bottom:74px;padding:10px}.neural-flow-header>div{display:block}.neural-flow-kicker{display:block;margin-bottom:3px}.neural-flow-track{overflow-x:auto;padding-bottom:2px}.neural-flow-node small{font-size:7px}.neural-flow-connector{min-width:18px}.neural-flow-detail{display:block}.neural-flow-detail b{display:block;margin-top:4px;white-space:normal}}
 @media(prefers-reduced-motion:reduce){.neural-flow-overlay,.neural-flow-overlay.is-visible{transition:none}.neural-flow-status i{animation:none}}
+
+
+/* Persistent planetary field: independent visual layer behind the operational application. */
+.planetary-atmosphere{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden;background:#01050c}
+.planetary-atmosphere-video{position:absolute;inset:-4%;width:108%;height:108%;object-fit:cover;object-position:50% 50%;opacity:.34;filter:saturate(.82) brightness(.58) contrast(1.04)}
+.planetary-atmosphere-veil{position:absolute;inset:0;background:radial-gradient(ellipse 62% 62% at 50% 46%,rgba(0,12,24,.05),rgba(0,5,12,.58) 68%,rgba(0,3,8,.88) 100%),linear-gradient(180deg,rgba(0,4,10,.35),rgba(0,5,12,.78))}
+.planetary-orbit-grid{position:absolute;left:50%;top:48%;width:min(78vw,980px);aspect-ratio:1;transform:translate(-50%,-50%);opacity:.19}
+.planetary-orbit-grid i{position:absolute;inset:0;border:1px solid rgba(34,211,238,.2);border-radius:50%;transform:rotate(18deg) scaleY(.34);animation:planetaryOrbitDrift 28s linear infinite}
+.planetary-orbit-grid i:nth-child(2){inset:12%;transform:rotate(-38deg) scaleY(.42);animation-duration:36s}
+.planetary-orbit-grid i:nth-child(3){inset:24%;transform:rotate(71deg) scaleY(.58);animation-duration:22s}
+.planetary-orbit-grid i:nth-child(4){inset:36%;transform:rotate(-12deg) scaleY(.72);animation-duration:44s}
+.planetary-orbit-core{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);font:500 9px 'JetBrains Mono',monospace;letter-spacing:.28em;color:rgba(165,243,252,.5);white-space:nowrap}
+.planetary-edge-readout{position:absolute;top:50%;font:8px/1.7 'JetBrains Mono',monospace;letter-spacing:.12em;color:rgba(148,163,184,.34);display:flex;flex-direction:column}
+.planetary-edge-readout strong{font-weight:500;color:rgba(103,232,249,.38)}
+.planetary-edge-readout-left{left:18px;transform:rotate(-90deg) translateX(-50%);transform-origin:left top}
+.planetary-edge-readout-right{right:18px;transform:rotate(90deg) translateX(50%);transform-origin:right top;text-align:right}
+@keyframes planetaryOrbitDrift{to{transform:rotate(378deg) scaleY(.34)}}
+.planetary-orbit-grid i:nth-child(2){animation-name:planetaryOrbitDrift2}
+.planetary-orbit-grid i:nth-child(3){animation-name:planetaryOrbitDrift3}
+.planetary-orbit-grid i:nth-child(4){animation-name:planetaryOrbitDrift4}
+@keyframes planetaryOrbitDrift2{to{transform:rotate(322deg) scaleY(.42)}}
+@keyframes planetaryOrbitDrift3{to{transform:rotate(431deg) scaleY(.58)}}
+@keyframes planetaryOrbitDrift4{to{transform:rotate(348deg) scaleY(.72)}}
+
+/* The older cinematic/Apogee-inspired layer remains a separate texture above the planet field. */
+.business-os-cinematic-bg{opacity:.28}
+.business-os-cinematic-veil{background:linear-gradient(180deg,rgba(0,0,0,.16),rgba(4,7,14,.44) 78%,rgba(4,7,14,.68))}
+.business-os-shell{position:relative;z-index:2}
+.business-os-shell::before{z-index:3}
+.neural-flow-overlay{position:fixed;left:auto;right:22px;bottom:72px;transform:translateY(18px);z-index:30;width:min(920px,calc(100vw - 44px))}
+.neural-flow-overlay.is-visible{transform:translateY(0)}
+@media(max-width:900px){.neural-flow-overlay{left:50%;right:auto;bottom:68px;transform:translate(-50%,18px)}.neural-flow-overlay.is-visible{transform:translate(-50%,0)}.planetary-edge-readout{display:none}}
+@media(prefers-reduced-motion:reduce){.planetary-atmosphere-video{animation:none}.planetary-orbit-grid i{animation:none}.neural-flow-overlay,.neural-flow-overlay.is-visible{transition:none}}
