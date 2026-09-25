@@ -732,7 +732,7 @@ body{
 /* Top planetary runtime field: the environment is now a dedicated visual header, not a full-screen background. */
 .business-os-planet-header{position:relative;z-index:10;height:clamp(150px,20vw,235px);overflow:hidden;border-bottom:1px solid rgba(255,255,255,.08);background:#02060d;isolation:isolate}
 .business-os-planet-media{position:absolute;inset:0;overflow:hidden}
-.business-os-planet-media .business-os-bg-video{position:absolute;inset:-2%;width:104%;height:104%;object-fit:cover;object-position:50% 42%;opacity:0;filter:saturate(.78) brightness(.56) contrast(1.04);transition:opacity .9s ease,filter 8s ease}
+.business-os-planet-media .business-os-bg-video{position:absolute;inset:-2%;width:104%;height:104%;object-fit:cover;object-position:50% 50%;opacity:0;filter:saturate(.78) brightness(.56) contrast(1.04);transition:opacity .9s ease,filter 8s ease}
 .business-os-planet-media .business-os-bg-video.is-active{opacity:1}
 .business-os-planet-veil{position:absolute;inset:0;background:linear-gradient(180deg,rgba(2,6,13,.18),rgba(2,6,13,.08) 42%,rgba(2,6,13,.92) 100%),radial-gradient(ellipse 58% 100% at 50% 48%,rgba(0,20,34,.02),rgba(0,5,12,.56) 82%);pointer-events:none}
 .business-os-planet-scanline{position:absolute;inset:0;opacity:.18;background:repeating-linear-gradient(180deg,transparent 0,transparent 3px,rgba(103,232,249,.035) 4px);pointer-events:none}
