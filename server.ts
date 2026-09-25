@@ -9,7 +9,7 @@ import { detectIncidents, listIncidents, updateIncident } from './server/securit
 import { createProvenanceRecord, verifyProvenanceRecord } from './server/security/provenance.js';
 import { createVaultProvenance, verifyVaultProvenance } from './server/security/vaultProvenance.js';
 import { executeSecurityResponse, executeRollbackResponse } from './server/security/responseRuntime.js';
-import { createPromptEnvelope } from './server/promptRuntime.js';
+import { chunkPrompt, createPromptEnvelope } from './server/promptRuntime.js';
 
 dotenv.config();
 
@@ -147,20 +147,61 @@ Return clean, valid JSON matching this schema:
   "affectedNodes": ["revenue", "sales", "customers"]
 }`;
 
-      const response = await ai.models.generateContent({
-        model: 'gemini-3.8-flash',
-        contents: `Request ID: ${promptEnvelope.requestId}
+      const maxModelPromptChars = Number(process.env.BUSINESS_OS_GEMINI_CHUNK_CHARS || 240_000);
+      const chunks = chunkPrompt(prompt, maxModelPromptChars);
+      let responseText = '{}';
+
+      if (chunks.length === 1) {
+        const response = await ai.models.generateContent({
+          model: 'gemini-3.8-flash',
+          contents: `Request ID: ${promptEnvelope.requestId}
 Prompt SHA-256: ${promptEnvelope.promptSha256}
 Business Context: ${businessContext || JSON.stringify({ arr: '$24.8M', runway: '22 mos', nrr: '118%' })}
 User Request: ${prompt}`,
-        config: {
-          systemInstruction,
-          responseMimeType: 'application/json',
-          thinkingConfig: { thinkingLevel: ThinkingLevel.MEDIUM },
-        },
-      });
+          config: {
+            systemInstruction,
+            responseMimeType: 'application/json',
+            thinkingConfig: { thinkingLevel: ThinkingLevel.MEDIUM },
+          },
+        });
+        responseText = response.text || '{}';
+      } else {
+        const chunkResults: string[] = [];
+        for (const chunk of chunks) {
+          const response = await ai.models.generateContent({
+            model: 'gemini-3.8-flash',
+            contents: `Request ID: ${promptEnvelope.requestId}
+Prompt SHA-256: ${promptEnvelope.promptSha256}
+Business Context: ${businessContext || '{}'}
+This is chunk ${chunk.index} of ${chunk.total}, covering source character offsets ${chunk.start}-${chunk.end}.
+Analyze this chunk as evidence only. Preserve concrete facts, numbers, anomalies, recommendations, and candidate actions. Do not invent missing context.
+Chunk:
+${chunk.text}`,
+            config: {
+              systemInstruction,
+              responseMimeType: 'application/json',
+              thinkingConfig: { thinkingLevel: ThinkingLevel.MEDIUM },
+            },
+          });
+          chunkResults.push(response.text || '{}');
+        }
 
-      const responseText = response.text || '{}';
+        const response = await ai.models.generateContent({
+          model: 'gemini-3.8-flash',
+          contents: `Request ID: ${promptEnvelope.requestId}
+Original Prompt SHA-256: ${promptEnvelope.promptSha256}
+Business Context: ${businessContext || '{}'}
+The original user prompt was processed completely across ${chunks.length} bounded chunks. Synthesize the chunk evidence below into the required final JSON response. Preserve facts and quantitative details; resolve duplicates conservatively; do not claim evidence that is absent from the chunk results.
+
+Chunk evidence:\n${chunkResults.map((result, index) => `--- CHUNK ${index + 1}/${chunks.length} ---\\n${result}`).join('\\n')}`,
+          config: {
+            systemInstruction,
+            responseMimeType: 'application/json',
+            thinkingConfig: { thinkingLevel: ThinkingLevel.MEDIUM },
+          },
+        });
+        responseText = response.text || '{}';
+      }
       try {
         const parsed = JSON.parse(responseText);
         return res.json({ success: true, source: 'gemini', request: { requestId: promptEnvelope.requestId, promptChars: promptEnvelope.promptChars, contextChars: promptEnvelope.contextChars, promptSha256: promptEnvelope.promptSha256 }, data: parsed });
