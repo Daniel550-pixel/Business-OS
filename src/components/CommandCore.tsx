@@ -67,6 +67,10 @@ export const CommandCore: React.FC<CommandCoreProps> = ({
     if (!query.trim()) return;
     if (query.length > MAX_PROMPT_CHARS) return;
 
+    window.dispatchEvent(new CustomEvent('business-os:command-history', {
+      detail: { query, status: 'started', timestamp: new Date().toISOString() },
+    }));
+
     const lower = query.toLowerCase();
 
     // Natural language navigation triggers
@@ -134,12 +138,18 @@ export const CommandCore: React.FC<CommandCoreProps> = ({
       const json = await response.json();
       if (json.success && json.data) {
         setResult(json.data);
+        window.dispatchEvent(new CustomEvent('business-os:command-history', {
+          detail: { query, status: 'completed', timestamp: new Date().toISOString() },
+        }));
         window.dispatchEvent(new CustomEvent('business-os:neural-flow', { detail: { stage: 'evidence', label: 'EVIDENCE SYNTHESIS', detail: 'Analysis returned. Claims, anomalies and proposed actions are now inspectable.', requestId: json.requestId } }));
         if (json.data.affectedNodes && onHighlightNodes) {
           onHighlightNodes(json.data.affectedNodes);
         }
       }
     } catch (err) {
+      window.dispatchEvent(new CustomEvent('business-os:command-history', {
+        detail: { query, status: 'failed', timestamp: new Date().toISOString() },
+      }));
       console.error('Command API error:', err);
     } finally {
       setIsProcessing(false);
