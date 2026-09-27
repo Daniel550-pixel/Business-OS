@@ -2,7 +2,6 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { Navigation } from './components/Navigation';
 import { CommandCenter } from './components/CommandCenter';
 import { BusinessWorld } from './components/BusinessWorld';
-import { CommandCore } from './components/CommandCore';
 import { MissionsView } from './components/MissionsView';
 import { AgentsView } from './components/AgentsView';
 import { FinanceView } from './components/FinanceView';
@@ -103,7 +102,6 @@ export default function App() {
 
   // Modals & Inspection Surfaces
   const [approvalAction, setApprovalAction] = useState<ProposedAction | null>(null);
-  const [isCommandModalOpen, setIsCommandModalOpen] = useState(false);
   const [isScenarioModalOpen, setIsScenarioModalOpen] = useState(false);
 
   // Explain This / Evidence Surface
@@ -383,9 +381,11 @@ export default function App() {
         onSystemStateChange={setSystemState}
         pendingApprovalsCount={pendingActions.length}
         onOpenCommandCore={() => {
-          setIsCommandModalOpen(true);
-          window.dispatchEvent(new CustomEvent('business-os:neural-flow', { detail: { stage: 'command',
-    stageId: 'understand-perception', label: 'COMMAND CORE', detail: 'Operator intent channel opened. Awaiting analysis input.' } }));
+          setActiveView('command-center');
+          setActiveFocusObjective(null);
+          window.dispatchEvent(new CustomEvent('business-os:neural-flow', {
+            detail: { stage: 'command', stageId: 'understand-perception', label: 'AGENT COMMAND', detail: 'Unified command surface focused.' },
+          }));
         }}
       />
 
