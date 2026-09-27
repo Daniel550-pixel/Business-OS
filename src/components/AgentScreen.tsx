@@ -72,8 +72,21 @@ export const AgentScreen: React.FC<AgentScreenProps> = ({
 }) => {
   const [stage, setStage] = useState<Stage>('command');
   const [commandHistory, setCommandHistory] = useState<Array<{ query: string; status: string; timestamp: string }>>([]);
+  const [paletteOpen, setPaletteOpen] = useState(false);
   const [activeAgentId, setActiveAgentId] = useState(agents[0]?.id || '');
   const [selectedAction, setSelectedAction] = useState<ProposedAction | null>(pendingActions[0] || null);
+
+  useEffect(() => {
+    const handleKeyboard = (event: KeyboardEvent) => {
+      if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'k') {
+        event.preventDefault();
+        setPaletteOpen((open) => !open);
+      }
+      if (event.key === 'Escape') setPaletteOpen(false);
+    };
+    window.addEventListener('keydown', handleKeyboard);
+    return () => window.removeEventListener('keydown', handleKeyboard);
+  }, []);
 
   useEffect(() => {
     const handleFlow = (event: Event) => {
@@ -139,6 +152,7 @@ export const AgentScreen: React.FC<AgentScreenProps> = ({
             <div className="flex items-center gap-2 font-mono text-[10px] uppercase">
               <span className="flex items-center gap-1.5 rounded-full border border-emerald-400/20 bg-emerald-400/5 px-2.5 py-1 text-emerald-300"><i className="h-1.5 w-1.5 rounded-full bg-emerald-400" />Runtime online</span>
               <span className="rounded-full border border-white/10 px-2.5 py-1 text-slate-400">{pendingActions.length} pending</span>
+              <span className="hidden rounded-full border border-white/10 px-2.5 py-1 text-slate-500 sm:inline">CTRL+K COMMANDS</span>
             </div>
           </div>
         </header>
@@ -401,6 +415,34 @@ export const AgentScreen: React.FC<AgentScreenProps> = ({
                 </div>
               </div>
             </div>
+
+        {paletteOpen && (
+          <div className="fixed inset-0 z-50 flex items-start justify-center bg-black/60 px-4 pt-[12vh] backdrop-blur-sm" onMouseDown={() => setPaletteOpen(false)}>
+            <div className="w-full max-w-xl overflow-hidden rounded-2xl border border-cyan-400/20 bg-[#090d15] shadow-[0_24px_100px_rgba(0,0,0,.65)]" onMouseDown={(event) => event.stopPropagation()}>
+              <div className="border-b border-white/10 px-4 py-3">
+                <div className="font-mono text-[10px] tracking-widest text-cyan-300">BUSINESS-OS COMMAND PALETTE</div>
+                <div className="mt-1 text-xs text-slate-500">Navigate the operating environment without leaving the AgentScreen.</div>
+              </div>
+              <div className="grid gap-1 p-2 sm:grid-cols-2">
+                {[
+                  ['Command', () => setStage('command')],
+                  ['Reasoning', () => setStage('reasoning')],
+                  ['Evidence', () => { setStage('evidence'); onOpenEvidence('Agent Evidence Review', selectedNode ? (selectedNode.label || selectedNode.name) + ' is the active business reality focus.' : 'Current agent evidence and telemetry.', 92); }],
+                  ['Policy Gate', () => setStage('policy')],
+                  ['Execution Ledger', () => setStage('ledger')],
+                  ['Missions', () => onNavigateToView('missions')],
+                  ['Agents', () => onNavigateToView('agents')],
+                  ['Intelligence', () => onNavigateToView('intelligence')],
+                ].map(([label, action]) => (
+                  <button key={String(label)} onClick={() => { (action as () => void)(); setPaletteOpen(false); }} className="rounded-xl border border-white/5 bg-white/[0.02] px-3 py-3 text-left text-xs text-slate-300 transition hover:border-cyan-400/25 hover:bg-cyan-400/[0.05] hover:text-white">
+                    {label}
+                  </button>
+                ))}
+              </div>
+              <div className="border-t border-white/10 px-4 py-2 font-mono text-[8px] text-slate-600">ESC CLOSE · CTRL+K TOGGLE</div>
+            </div>
+          </div>
+        )}
         <footer className="border-t border-white/10 bg-black/30 px-4 py-2.5 text-center font-mono text-[9px] tracking-[0.18em] text-slate-600">
           AI DECIDES ≠ AI EXECUTES · BUSINESS REALITY → AGENT REASONING → EVIDENCE → POLICY GATE → EXECUTION LEDGER
         </footer>
