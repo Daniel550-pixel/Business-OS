@@ -223,6 +223,7 @@ export interface Agent {
 export interface WorldNode {
   id: string;
   label: string;
+  name?: string;
   type: 'revenue' | 'customers' | 'sales' | 'operations' | 'projects' | 'agents' | 'finance' | 'systems';
   status: 'optimal' | 'warning' | 'critical' | 'active';
   x: number;

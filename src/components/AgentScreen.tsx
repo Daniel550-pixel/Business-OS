@@ -111,7 +111,7 @@ export const AgentScreen: React.FC<AgentScreenProps> = ({
         stage: 'evidence',
         stageId: 'simulate-predict',
         label: 'BUSINESS EVIDENCE',
-        detail: `Agent is correlating live business topology around ${node.name}.`,
+        detail: `Agent is correlating live business topology around ${node.name || node.label}.`,
       },
     }));
   };
@@ -246,7 +246,7 @@ export const AgentScreen: React.FC<AgentScreenProps> = ({
                   <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
                     {nodes.slice(0, 9).map((node) => (
                       <button key={node.id} onClick={() => inspectNode(node)} className={`rounded-xl border p-3 text-left transition ${selectedNode?.id === node.id ? 'border-cyan-400/40 bg-cyan-400/10' : 'border-white/5 bg-white/[0.02] hover:border-white/15'}`}>
-                        <div className="flex items-center justify-between gap-2"><span className="truncate text-xs text-slate-200">{node.name}</span><Target className="h-3 w-3 text-slate-600" /></div>
+                        <div className="flex items-center justify-between gap-2"><span className="truncate text-xs text-slate-200">{node.label || node.name}</span><Target className="h-3 w-3 text-slate-600" /></div>
                         <div className="mt-1 font-mono text-[9px] uppercase text-slate-500">{node.type || 'entity'}</div>
                       </button>
                     ))}
@@ -269,7 +269,7 @@ export const AgentScreen: React.FC<AgentScreenProps> = ({
 
             <div className="border-t border-white/10 p-4 sm:p-5">
               <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
-                <button onClick={() => { setStage('evidence'); onOpenEvidence('Agent Evidence Review', selectedNode ? `${selectedNode.name} is the current business reality focus.` : 'The agent is reviewing current business telemetry.', 92); }} className="rounded-xl border border-white/10 bg-white/[0.02] p-3 text-left hover:border-cyan-400/30">
+                <button onClick={() => { setStage('evidence'); onOpenEvidence('Agent Evidence Review', selectedNode ? `${selectedNode.label || selectedNode.name} is the current business reality focus.` : 'The agent is reviewing current business telemetry.', 92); }} className="rounded-xl border border-white/10 bg-white/[0.02] p-3 text-left hover:border-cyan-400/30">
                   <div className="flex items-center gap-2 text-xs font-semibold text-white"><FileSearch className="h-4 w-4 text-cyan-300" />Inspect evidence</div>
                   <div className="mt-1 text-[10px] text-slate-500">Open traceable evidence behind the active reasoning state.</div>
                 </button>
@@ -303,7 +303,7 @@ export const AgentScreen: React.FC<AgentScreenProps> = ({
               <div className="mb-3 font-mono text-[10px] tracking-widest text-slate-500">ACTIVE CONTEXT</div>
               {selectedNode ? (
                 <div className="rounded-xl border border-cyan-400/20 bg-cyan-400/[0.04] p-3">
-                  <div className="text-sm font-semibold text-white">{selectedNode.name}</div>
+                  <div className="text-sm font-semibold text-white">{selectedNode.label || selectedNode.name}</div>
                   <div className="mt-1 font-mono text-[9px] uppercase text-cyan-300">{selectedNode.type || 'business entity'}</div>
                   <div className="mt-3 text-[10px] leading-relaxed text-slate-400">This business-world entity is directly connected to the active agent reasoning surface. Selecting it changes the evidence context rather than opening a separate planet or world interface.</div>
                 </div>
