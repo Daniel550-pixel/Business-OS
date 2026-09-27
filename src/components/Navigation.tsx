@@ -140,8 +140,8 @@ export const Navigation: React.FC<NavigationProps> = ({
               <div className="absolute -top-0.5 -right-0.5 w-1.5 h-1.5 rounded-full bg-cyan-400 animate-ping" />
             </div>
             <div className="flex items-baseline gap-2">
-              <span className="text-xs font-bold tracking-widest text-slate-100 uppercase">BUSINESS OS</span>
-              <span className="text-[10px] font-mono tracking-wider text-cyan-400/80 bg-cyan-950/40 px-1.5 py-0.5 rounded border border-cyan-800/40">AI-NATIVE</span>
+              <span className="text-xs font-bold tracking-widest text-slate-100 uppercase">JARVIS / AIOS</span>
+              <span className="text-[10px] font-mono tracking-wider text-cyan-400/80 bg-cyan-950/40 px-1.5 py-0.5 rounded border border-cyan-800/40">AIOS UAE</span>
             </div>
           </div>
 

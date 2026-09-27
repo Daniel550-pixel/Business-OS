@@ -26,6 +26,8 @@ import { AIIntelligenceLayer } from './components/AIIntelligenceLayer';
 import { AIActivityStream } from './components/AIActivityStream';
 import { SecurityHUD } from './components/SecurityHUD';
 import { AgentScreen } from './components/AgentScreen';
+import { PlanetHero } from './components/PlanetHero';
+import { LivingSystemFlow3D } from './components/LivingSystemFlow3D';
 
 import {
   initialMetrics,
@@ -398,6 +400,13 @@ export default function App() {
     showToast(`Temporal Scrub: ${epoch} — ARR: ${snap.arr} (${snap.keyEvent})`);
   }, []);
 
+  const handleScrollToDashboard = useCallback(() => {
+    const el = document.getElementById('operational-dashboard');
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, []);
+
   // State-aware dynamic border/glow class
   const getContainerStateClass = () => {
     switch (systemState) {
@@ -416,26 +425,37 @@ export default function App() {
 
   return (
     <div className={`business-os-shell min-h-screen text-slate-100 flex flex-col selection:bg-cyan-500/30 selection:text-cyan-200 transition-all duration-300 ${getContainerStateClass()}`}>
-      <section className="business-os-planet-header" aria-label="Business OS planetary runtime field">
-        <div className="business-os-planet-media" aria-hidden="true">
-          <video id="businessOsBgA" className="business-os-bg-video is-active" autoPlay muted loop playsInline preload="auto" disablePictureInPicture poster="https://d2ol7oe51mr4n9cf9b4n9.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/82e7eb75-c65f-490a-99b5-f3d1cad54200.webp">
-            <source src="https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260912_104036_bd6924f6-3c8e-417e-8465-6d03c8c2e9e6.mp4" type="video/mp4" />
-          </video>
-          <video id="businessOsBgB" className="business-os-bg-video" muted loop playsInline preload="auto" disablePictureInPicture poster="https://d2ol7oe51mr4n9cf9b4n9.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/82e7eb75-c65f-490a-99b5-f3d1cad54200.webp">
-            <source src="https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260912_104036_bd6924f6-3c8e-417e-8465-6d03c8c2e9e6.mp4" type="video/mp4" />
-          </video>
-          <div className="business-os-planet-veil" />
-          <div className="business-os-planet-scanline" />
-        </div>
-        <div className="business-os-planet-label">
-          <span>PLANETARY RUNTIME FIELD</span>
-          <strong>BUSINESS REALITY // LIVE</strong>
-        </div>
-        <div className="business-os-planet-meta">
-          <span>ENVIRONMENT ONLINE</span>
-          <span>REALITY → AGENT RUNTIME</span>
-        </div>
-      </section>
+      {/* Top Planetary Ambient Banner (on secondary views) with Centered System Title */}
+      {activeView !== 'command-center' && activeView !== 'command' && (
+        <section className="business-os-planet-header" aria-label="Business OS planetary runtime field">
+          <div className="business-os-planet-media" aria-hidden="true">
+            <video id="businessOsBgA" className="business-os-bg-video is-active" autoPlay muted loop playsInline preload="auto" disablePictureInPicture poster="https://d2ol7oe51mr4n9cf9b4n9.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/82e7eb75-c65f-490a-99b5-f3d1cad54200.webp">
+              <source src="https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260912_104036_bd6924f6-3c8e-417e-8465-6d03c8c2e9e6.mp4" type="video/mp4" />
+            </video>
+            <video id="businessOsBgB" className="business-os-bg-video" muted loop playsInline preload="auto" disablePictureInPicture poster="https://d2ol7oe51mr4n9cf9b4n9.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/82e7eb75-c65f-490a-99b5-f3d1cad54200.webp">
+              <source src="https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260912_104036_bd6924f6-3c8e-417e-8465-6d03c8c2e9e6.mp4" type="video/mp4" />
+            </video>
+            <div className="business-os-planet-veil" />
+            <div className="business-os-planet-scanline" />
+          </div>
+          <div className="business-os-planet-header-content">
+            <div className="inline-flex items-center gap-2 text-[10px] font-mono tracking-widest text-cyan-400 font-bold uppercase">
+              <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-ping" />
+              <span>AIOS UAE // SOVEREIGN AI OPERATING ENVIRONMENT</span>
+            </div>
+            <h2 className="text-xl sm:text-2xl font-extrabold font-mono text-white tracking-wider mt-1 drop-shadow-[0_2px_16px_rgba(0,0,0,0.8)]">
+              JARVIS <span className="text-cyan-400 font-light">/</span> AIOS
+            </h2>
+            <div className="flex items-center gap-3 text-[10px] font-mono text-slate-300 mt-1">
+              <span>PLANETARY RUNTIME FIELD</span>
+              <span className="text-slate-600">•</span>
+              <span className="text-emerald-400 font-semibold">ENVIRONMENT ONLINE</span>
+              <span className="text-slate-600">•</span>
+              <span className="text-cyan-300">UAE WORLD MODEL // LIVE</span>
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* Telemetry Header & View Switcher */}
       <Navigation
@@ -457,7 +477,7 @@ export default function App() {
       />
 
       {/* Main Content Viewport */}
-      <main className="flex-1 w-full min-w-0 p-3 sm:p-4 lg:p-5 space-y-5 os-grid os-scanlines">
+      <main className="flex-1 w-full min-w-0 p-3 sm:p-4 lg:p-5 space-y-6 os-grid os-scanlines">
         {/* If Executive Mode is explicitly toggled, present the High-Density Executive Cockpit */}
         {operatingMode === 'executive' ? (
           <ExecutiveCockpit
@@ -488,37 +508,107 @@ export default function App() {
           />
         ) : (
           <>
-            {/* Unified Agent Screen: business reality and planetary runtime are one interface. */}
-            {(activeView === 'command-center' || activeView === 'command' || activeView === 'business-world' || activeView === 'world') && (
-              <AgentScreen
-                systemState={systemState}
-                agents={agents}
-                missions={missions}
-                nodes={nodes}
-                selectedNode={selectedNode}
-                pendingActions={pendingActions}
-                executionRecords={executionRecords}
-                activityTicks={activityTicks}
-                metrics={metrics}
-                onSelectNode={setSelectedNode}
-                onExecuteAction={handleOpenActionApproval}
-                onOpenCommandCore={() => {
-                  setIsCommandModalOpen(true);
-                  window.dispatchEvent(new CustomEvent('business-os:neural-flow', {
-                    detail: {
-                      stage: 'command',
-                      stageId: 'understand-perception',
-                      label: 'AGENT COMMAND',
-                      detail: 'Operator intent channel opened. Awaiting analysis input.',
-                    },
-                  }));
-                }}
-                onOpenEvidence={(title, claim, confidence) => handleOpenEvidence(title, claim, confidence)}
-                onNavigateToView={(view) => {
-                  setActiveView(view);
-                  setActiveFocusObjective(null);
-                }}
-              />
+            {/* Main Starting Screen: Centered Planet UI & System Title with operational workspace */}
+            {(activeView === 'command-center' || activeView === 'command') && (
+              <>
+                <PlanetHero
+                  onScrollToDashboard={handleScrollToDashboard}
+                  onOpenCommandCore={() => {
+                    setIsCommandModalOpen(true);
+                    window.dispatchEvent(new CustomEvent('business-os:neural-flow', {
+                      detail: {
+                        stage: 'command',
+                        stageId: 'understand-perception',
+                        label: 'COMMAND CORE',
+                        detail: 'Operator intent channel opened. Awaiting analysis input.',
+                      },
+                    }));
+                  }}
+                  onNavigateToView={(view) => {
+                    setActiveView(view);
+                    setActiveFocusObjective(null);
+                  }}
+                  systemState={systemState}
+                  pendingApprovalsCount={pendingActions.length}
+                  activeMissionsCount={missions.filter((m) => m.status === 'active').length}
+                />
+
+                {/* Operational Cockpit & Agent Screen directly beneath the centered Planet hero on the starting screen */}
+                <div id="operational-dashboard" className="pt-6 space-y-4">
+                  <div className="flex items-center justify-between border-b border-white/[0.08] pb-3">
+                    <div className="flex items-center gap-2.5">
+                      <span className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse" />
+                      <span className="text-xs font-mono font-bold tracking-widest uppercase text-slate-300">
+                        OPERATIONAL COCKPIT & AGENT RUNTIME
+                      </span>
+                      <span className="text-slate-600 font-mono text-xs hidden sm:inline">|</span>
+                      <span className="text-xs font-mono text-cyan-400/80 hidden sm:inline">REAL-TIME BUSINESS TOPOLOGY</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => {
+                          setIsCommandModalOpen(true);
+                          window.dispatchEvent(new CustomEvent('business-os:neural-flow', {
+                            detail: {
+                              stage: 'command',
+                              stageId: 'understand-perception',
+                              label: 'COMMAND CORE',
+                              detail: 'Operator intent channel opened. Awaiting analysis input.',
+                            },
+                          }));
+                        }}
+                        className="px-3 py-1 rounded-lg bg-cyan-500/10 hover:bg-cyan-500/20 border border-cyan-500/30 text-cyan-300 text-xs font-mono transition-all"
+                      >
+                        Issue Command (⌘K)
+                      </button>
+                    </div>
+                  </div>
+
+                  <AgentScreen
+                    systemState={systemState}
+                    agents={agents}
+                    missions={missions}
+                    nodes={nodes}
+                    selectedNode={selectedNode}
+                    pendingActions={pendingActions}
+                    executionRecords={executionRecords}
+                    activityTicks={activityTicks}
+                    metrics={metrics}
+                    onSelectNode={setSelectedNode}
+                    onExecuteAction={handleOpenActionApproval}
+                    onOpenCommandCore={() => {
+                      setIsCommandModalOpen(true);
+                      window.dispatchEvent(new CustomEvent('business-os:neural-flow', {
+                        detail: {
+                          stage: 'command',
+                          stageId: 'understand-perception',
+                          label: 'AGENT COMMAND',
+                          detail: 'Operator intent channel opened. Awaiting analysis input.',
+                        },
+                      }));
+                    }}
+                    onOpenEvidence={(title, claim, confidence) => handleOpenEvidence(title, claim, confidence)}
+                    onNavigateToView={(view) => {
+                      setActiveView(view);
+                      setActiveFocusObjective(null);
+                    }}
+                  />
+                </div>
+              </>
+            )}
+
+            {/* Direct World / 3D Living Flow View */}
+            {(activeView === 'business-world' || activeView === 'world' || activeView === 'system-flow') && (
+              <div className="space-y-4">
+                <LivingSystemFlow3D
+                  isEmbedded={false}
+                  onNavigateToView={(v) => {
+                    setActiveView(v);
+                    setActiveFocusObjective(null);
+                  }}
+                  onOpenCommandCore={() => setIsCommandModalOpen(true)}
+                />
+              </div>
             )}
 
             {/* View: Security Layer — authoritative security telemetry surface */}
