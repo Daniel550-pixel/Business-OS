@@ -505,12 +505,12 @@ export default function App() {
             {/* View: Sales */}
             {activeView === 'sales' && (<OperationalWorkspace id="sales" label="Sales Command" eyebrow="GROWTH // REVENUE OPERATIONS" description="Turn pipeline signals into prioritized sales actions and measurable execution." icon={<TrendingUp className="h-5 w-5" />} tone="blue" metrics={[{label:'ARR',value:metrics[0]?.value||'—'},{label:'OPPORTUNITIES',value:opportunities.length},{label:'MISSIONS',value:missions.length},{label:'PENDING',value:pendingActions.length}]}>
               <SalesView onExecuteAction={handleOpenActionApproval} />
-            )}
+            </OperationalWorkspace>)}
 
             {/* View: Operations */}
             {activeView === 'operations' && (<OperationalWorkspace id="operations" label="Operations Control" eyebrow="EXECUTION // OPERATING SYSTEM" description="Observe operational state, dependencies and actions requiring intervention." icon={<Server className="h-5 w-5" />} tone="amber" metrics={[{label:'NODES',value:nodes.length},{label:'EXECUTIONS',value:executionRecords.length},{label:'PENDING',value:pendingActions.length},{label:'STATE',value:systemState.replace('_',' ')}]}>
               <OperationsView onExecuteAction={handleOpenActionApproval} />
-            )}
+            </OperationalWorkspace>)}
 
             {/* View: Customers */}
             {activeView === 'customers' && (<OperationalWorkspace id="customers" label="Customer Intelligence" eyebrow="CUSTOMER // RELATIONSHIP OPERATIONS" description="Investigate customer health, activity changes and AI-prioritized interventions." icon={<Users className="h-5 w-5" />} tone="cyan" metrics={[{label:'NODES',value:nodes.length},{label:'AGENTS',value:agents.length},{label:'ANOMALIES',value:anomalies.length},{label:'PENDING',value:pendingActions.length}]}>
