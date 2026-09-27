@@ -13,7 +13,8 @@ import {
   Target,
   Workflow,
 } from 'lucide-react';
-import { Agent, ExecutionRecord, Mission, ProposedAction, SystemRuntimeState, WorldNode } from '../types';
+import { Agent, ExecutionRecord, Mission, ProposedAction, SystemRuntimeState, WorldNode, TemporalEpoch, ViewMode, OperatingMode } from '../types';
+import { CommandCore } from './CommandCore';
 
 interface AgentScreenProps {
   systemState: SystemRuntimeState;
@@ -27,9 +28,15 @@ interface AgentScreenProps {
   metrics: any[];
   onSelectNode: (node: WorldNode) => void;
   onExecuteAction: (action: ProposedAction) => void;
-  onOpenCommandCore: () => void;
   onOpenEvidence: (title: string, claim: string, confidence: number) => void;
   onNavigateToView: (view: any) => void;
+  onOpenMission: (mission: Mission) => void;
+  onHighlightNodes: (nodeIds: string[]) => void;
+  onOpenFocus: (objectiveId: string) => void;
+  onSetEpoch: (epoch: TemporalEpoch) => void;
+  onOpenScenarioModeling: () => void;
+  onSelectEntityId: (entityId: string) => void;
+  onSetOperatingMode: (mode: OperatingMode) => void;
 }
 
 type Stage = 'command' | 'reasoning' | 'evidence' | 'policy' | 'ledger';
@@ -57,9 +64,15 @@ export const AgentScreen: React.FC<AgentScreenProps> = ({
   onOpenCommandCore,
   onOpenEvidence,
   onNavigateToView,
+  onOpenMission,
+  onHighlightNodes,
+  onOpenFocus,
+  onSetEpoch,
+  onOpenScenarioModeling,
+  onSelectEntityId,
+  onSetOperatingMode,
 }) => {
   const [stage, setStage] = useState<Stage>('command');
-  const [intent, setIntent] = useState('');
   const [activeAgentId, setActiveAgentId] = useState(agents[0]?.id || '');
   const [selectedAction, setSelectedAction] = useState<ProposedAction | null>(pendingActions[0] || null);
 
@@ -84,24 +97,6 @@ export const AgentScreen: React.FC<AgentScreenProps> = ({
     () => metrics.find((metric) => metric.id === 'arr') || metrics[0],
     [metrics],
   );
-
-  const submitIntent = (event: React.FormEvent) => {
-    event.preventDefault();
-    if (!intent.trim()) {
-      onOpenCommandCore();
-      return;
-    }
-    setStage('reasoning');
-    window.dispatchEvent(new CustomEvent('business-os:neural-flow', {
-      detail: {
-        stage: 'command',
-        stageId: 'understand-perception',
-        label: 'AGENT COMMAND',
-        detail: 'Operator intent captured and routed into the reasoning runtime.',
-      },
-    }));
-    onOpenCommandCore();
-  };
 
   const inspectNode = (node: WorldNode) => {
     onSelectNode(node);
@@ -190,18 +185,19 @@ export const AgentScreen: React.FC<AgentScreenProps> = ({
                 </div>
               </div>
 
-              <form onSubmit={submitIntent} className="flex gap-2 rounded-2xl border border-cyan-400/20 bg-black/40 p-2 shadow-[0_0_40px_rgba(34,211,238,.06)]">
-                <input
-                  value={intent}
-                  onChange={(event) => setIntent(event.target.value)}
-                  onFocus={() => setStage('command')}
-                  placeholder="Give the agent an objective, question, investigation or action..."
-                  className="min-w-0 flex-1 bg-transparent px-2 text-sm text-white outline-none placeholder:text-slate-600"
+              <div className="rounded-2xl border border-cyan-400/20 bg-black/30 p-3 shadow-[0_0_40px_rgba(34,211,238,.06)]">
+                <CommandCore
+                  onExecuteAction={onExecuteAction}
+                  onOpenMission={onOpenMission}
+                  onHighlightNodes={onHighlightNodes}
+                  onOpenFocus={onOpenFocus}
+                  onSetEpoch={onSetEpoch}
+                  onOpenScenarioModeling={onOpenScenarioModeling}
+                  onSelectEntityId={onSelectEntityId}
+                  onNavigateToView={onNavigateToView}
+                  onSetOperatingMode={onSetOperatingMode}
                 />
-                <button type="submit" className="flex items-center gap-2 rounded-xl bg-cyan-400/15 px-3 py-2 font-mono text-[10px] font-bold text-cyan-200 hover:bg-cyan-400/25">
-                  <Send className="h-3.5 w-3.5" /> RUN
-                </button>
-              </form>
+              </div>
             </div>
 
             <div className="grid min-h-[330px] grid-cols-1 xl:grid-cols-[minmax(0,1fr)_220px]">
