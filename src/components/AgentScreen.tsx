@@ -71,6 +71,7 @@ export const AgentScreen: React.FC<AgentScreenProps> = ({
   onSetOperatingMode,
 }) => {
   const [stage, setStage] = useState<Stage>('command');
+  const [commandHistory, setCommandHistory] = useState<Array<{ query: string; status: string; timestamp: string }>>([]);
   const [activeAgentId, setActiveAgentId] = useState(agents[0]?.id || '');
   const [selectedAction, setSelectedAction] = useState<ProposedAction | null>(pendingActions[0] || null);
 
@@ -80,8 +81,20 @@ export const AgentScreen: React.FC<AgentScreenProps> = ({
       const next = detail.stage as Stage;
       if (STAGES.some((item) => item.id === next)) setStage(next);
     };
+    const handleCommandHistory = (event: Event) => {
+      const detail = (event as CustomEvent<{ query?: string; status?: string; timestamp?: string }>).detail || {};
+      if (!detail.query) return;
+      setCommandHistory((prev) => [
+        { query: detail.query, status: detail.status || 'started', timestamp: detail.timestamp || new Date().toISOString() },
+        ...prev.filter((item) => item.query !== detail.query),
+      ].slice(0, 8));
+    };
     window.addEventListener('business-os:neural-flow', handleFlow);
-    return () => window.removeEventListener('business-os:neural-flow', handleFlow);
+    window.addEventListener('business-os:command-history', handleCommandHistory);
+    return () => {
+      window.removeEventListener('business-os:neural-flow', handleFlow);
+      window.removeEventListener('business-os:command-history', handleCommandHistory);
+    };
   }, []);
 
   useEffect(() => {
@@ -324,6 +337,70 @@ export const AgentScreen: React.FC<AgentScreenProps> = ({
           </aside>
         </div>
 
+
+            <div className="border-t border-white/10 bg-black/20 p-4 sm:p-5">
+              <div className="grid grid-cols-1 gap-3 xl:grid-cols-[minmax(0,1.35fr)_minmax(280px,.65fr)]">
+                <div className="rounded-2xl border border-white/10 bg-black/30 p-4">
+                  <div className="mb-3 flex items-center justify-between">
+                    <div>
+                      <div className="font-mono text-[10px] tracking-widest text-slate-500">EVENT LEDGER</div>
+                      <div className="mt-1 text-xs text-slate-300">Live system events, agent activity and authorized execution.</div>
+                    </div>
+                    <LockKeyhole className="h-4 w-4 text-emerald-300" />
+                  </div>
+                  <div className="max-h-44 space-y-1.5 overflow-auto pr-1">
+                    {[
+                      ...activityTicks.slice(0, 6).map((tick) => ({
+                        id: tick.id,
+                        time: tick.timestamp,
+                        label: tick.agentName || 'AGENT',
+                        text: tick.action,
+                        state: tick.category === 'policy_gate' ? 'POLICY' : 'EVENT',
+                      })),
+                      ...executionRecords.slice(0, 4).map((record) => ({
+                        id: record.id,
+                        time: record.timestamp,
+                        label: 'EXECUTION',
+                        text: record.actionTitle,
+                        state: record.status,
+                      })),
+                    ].slice(0, 9).map((event) => (
+                      <div key={event.id} className="flex items-start gap-3 rounded-lg border border-white/5 bg-white/[0.02] px-2.5 py-2">
+                        <span className="shrink-0 font-mono text-[8px] text-slate-600">{event.time}</span>
+                        <span className="shrink-0 rounded border border-cyan-400/10 px-1.5 py-0.5 font-mono text-[8px] text-cyan-300">{event.label}</span>
+                        <span className="min-w-0 flex-1 text-[9px] leading-relaxed text-slate-400">{event.text}</span>
+                        <span className="shrink-0 font-mono text-[8px] text-slate-600">{event.state}</span>
+                      </div>
+                    ))}
+                    {activityTicks.length === 0 && executionRecords.length === 0 && (
+                      <div className="py-5 text-center font-mono text-[9px] text-slate-600">Ledger awaiting first runtime event.</div>
+                    )}
+                  </div>
+                </div>
+
+                <div className="rounded-2xl border border-white/10 bg-black/30 p-4">
+                  <div className="mb-3 flex items-center justify-between">
+                    <div>
+                      <div className="font-mono text-[10px] tracking-widest text-slate-500">COMMAND HISTORY</div>
+                      <div className="mt-1 text-xs text-slate-300">Recent operator intent and runtime outcome.</div>
+                    </div>
+                    <Sparkles className="h-4 w-4 text-cyan-300" />
+                  </div>
+                  <div className="space-y-1.5">
+                    {commandHistory.map((item) => (
+                      <div key={item.timestamp + item.query} className="rounded-lg border border-white/5 bg-white/[0.02] px-2.5 py-2">
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="truncate text-[10px] text-slate-300">{item.query}</span>
+                          <span className={`shrink-0 font-mono text-[8px] uppercase ${item.status === 'completed' ? 'text-emerald-300' : item.status === 'failed' ? 'text-rose-300' : 'text-amber-300'}`}>{item.status}</span>
+                        </div>
+                        <div className="mt-1 font-mono text-[8px] text-slate-600">{new Date(item.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
+                      </div>
+                    ))}
+                    {commandHistory.length === 0 && <div className="py-5 text-center font-mono text-[9px] text-slate-600">No commands executed in this session.</div>}
+                  </div>
+                </div>
+              </div>
+            </div>
         <footer className="border-t border-white/10 bg-black/30 px-4 py-2.5 text-center font-mono text-[9px] tracking-[0.18em] text-slate-600">
           AI DECIDES ≠ AI EXECUTES · BUSINESS REALITY → AGENT REASONING → EVIDENCE → POLICY GATE → EXECUTION LEDGER
         </footer>
