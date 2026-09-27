@@ -25,6 +25,7 @@ import { AIIntelligenceLayer } from './components/AIIntelligenceLayer';
 import { AIActivityStream } from './components/AIActivityStream';
 import { SecurityHUD } from './components/SecurityHUD';
 import { AgentScreen } from './components/AgentScreen';
+import { OperationalWorkspace } from './components/OperationalWorkspace';
 
 import {
   initialMetrics,
@@ -464,7 +465,7 @@ export default function App() {
             {activeView === 'cyber-hud' && <SecurityHUD />}
 
             {/* View: Missions */}
-            {activeView === 'missions' && (
+            {activeView === 'missions' && (<OperationalWorkspace id="missions" label="Mission Control" eyebrow="OPERATIONS // MISSION ORCHESTRATION" description="Coordinate objectives, agents and proposed actions from one execution surface." icon={<Compass className="h-5 w-5" />} tone="cyan" metrics={[{label:'ACTIVE MISSIONS',value:missions.length},{label:'PENDING ACTIONS',value:pendingActions.length},{label:'AGENTS',value:agents.length},{label:'STATE',value:systemState.replace('_',' ')}]}>
               <MissionsView
                 missions={missions}
                 selectedMission={selectedMission}
@@ -472,19 +473,19 @@ export default function App() {
                 onExecuteAction={handleOpenActionApproval}
                 onCreateMission={handleCreateMission}
               />
-            )}
+            </OperationalWorkspace>)}
 
             {/* View: Agents */}
-            {activeView === 'agents' && (
+            {activeView === 'agents' && (<OperationalWorkspace id="agents" label="AI Agent Network" eyebrow="INTELLIGENCE // AGENT ORCHESTRATION" description="Inspect agent roles, collaboration and current operating context." icon={<Cpu className="h-5 w-5" />} tone="violet" metrics={[{label:'AGENTS',value:agents.length},{label:'MISSIONS',value:missions.length},{label:'PENDING',value:pendingActions.length},{label:'RUNTIME',value:'ONLINE'}]}>
               <AgentsView
                 agents={agents}
                 selectedAgent={selectedAgent}
                 onSelectAgent={setSelectedAgent}
               />
-            )}
+            </OperationalWorkspace>)}
 
             {/* View: Finance */}
-            {activeView === 'finance' && (
+            {activeView === 'finance' && (<OperationalWorkspace id="finance" label="Finance Command" eyebrow="BUSINESS // FINANCIAL OPERATIONS" description="Monitor financial signals, performance and AI-proposed financial actions." icon={<DollarSign className="h-5 w-5" />} tone="emerald" metrics={metrics.slice(0,4).map((m:any)=>({label:m.label||m.name||m.id,value:m.value}))}>
               <FinanceView
                 metrics={metrics}
                 onTriggerAction={(title) => {
@@ -498,28 +499,28 @@ export default function App() {
                   });
                 }}
               />
-            )}
+            </OperationalWorkspace>)}
 
             {/* View: Sales */}
-            {activeView === 'sales' && (
+            {activeView === 'sales' && (<OperationalWorkspace id="sales" label="Sales Command" eyebrow="GROWTH // REVENUE OPERATIONS" description="Turn pipeline signals into prioritized sales actions and measurable execution." icon={<TrendingUp className="h-5 w-5" />} tone="blue" metrics={[{label:'ARR',value:metrics[0]?.value||'—'},{label:'OPPORTUNITIES',value:opportunities.length},{label:'MISSIONS',value:missions.length},{label:'PENDING',value:pendingActions.length}]}>
               <SalesView onExecuteAction={handleOpenActionApproval} />
             )}
 
             {/* View: Operations */}
-            {activeView === 'operations' && (
+            {activeView === 'operations' && (<OperationalWorkspace id="operations" label="Operations Control" eyebrow="EXECUTION // OPERATING SYSTEM" description="Observe operational state, dependencies and actions requiring intervention." icon={<Server className="h-5 w-5" />} tone="amber" metrics={[{label:'NODES',value:nodes.length},{label:'EXECUTIONS',value:executionRecords.length},{label:'PENDING',value:pendingActions.length},{label:'STATE',value:systemState.replace('_',' ')}]}>
               <OperationsView onExecuteAction={handleOpenActionApproval} />
             )}
 
             {/* View: Customers */}
-            {activeView === 'customers' && (
+            {activeView === 'customers' && (<OperationalWorkspace id="customers" label="Customer Intelligence" eyebrow="CUSTOMER // RELATIONSHIP OPERATIONS" description="Investigate customer health, activity changes and AI-prioritized interventions." icon={<Users className="h-5 w-5" />} tone="cyan" metrics={[{label:'NODES',value:nodes.length},{label:'AGENTS',value:agents.length},{label:'ANOMALIES',value:anomalies.length},{label:'PENDING',value:pendingActions.length}]}>
               <CustomersView onExecuteAction={handleOpenActionApproval} />
             )}
 
             {/* View: Research */}
-            {activeView === 'research' && <ResearchView />}
+            {activeView === 'research' && <OperationalWorkspace id="research" label="Research Lab" eyebrow="INTELLIGENCE // RESEARCH & DISCOVERY" description="Turn questions into evidence-backed investigations and decision-ready findings." icon={<Search className="h-5 w-5" />} tone="violet" metrics={[{label:'EVENTS',value:events.length},{label:'AGENTS',value:agents.length},{label:'NODES',value:nodes.length},{label:'STATUS',value:'READY'}]}><ResearchView /></OperationalWorkspace>}
 
             {/* View: Live Stream / Intelligence */}
-            {activeView === 'intelligence' && (
+            {activeView === 'intelligence' && (<OperationalWorkspace id="intelligence" label="Intelligence Stream" eyebrow="REAL-TIME // BUSINESS TELEMETRY" description="Watch live agent activity, anomalies and evidence flow through the operating system." icon={<Radio className="h-5 w-5" />} tone="amber" metrics={[{label:'EVENTS',value:events.length},{label:'ACTIVITY',value:activityTicks.length},{label:'ANOMALIES',value:anomalies.length},{label:'PENDING',value:pendingActions.length}]}>
               <div className="space-y-6">
                 <AIActivityStream
                   ticks={activityTicks}
@@ -538,17 +539,17 @@ export default function App() {
                   onExecuteAction={handleOpenActionApproval}
                 />
               </div>
-            )}
+            </OperationalWorkspace>)}
 
             {/* View: Automations & Audit Ledger */}
-            {activeView === 'automations' && (
+            {activeView === 'automations' && (<OperationalWorkspace id="automations" label="Policy & Audit" eyebrow="GOVERNANCE // EXECUTION CONTROL" description="Review pending actions, execution records and rollback controls under the policy gate." icon={<ShieldCheck className="h-5 w-5" />} tone="amber" metrics={[{label:'PENDING',value:pendingActions.length},{label:'EXECUTED',value:executionRecords.length},{label:'POLICY',value:'ENFORCED'},{label:'RUNTIME',value:'LIVE'}]}>
               <AutomationsView
                 pendingActions={pendingActions}
                 executionRecords={executionRecords}
                 onExecuteAction={handleOpenActionApproval}
                 onRollbackAction={handleRollback}
               />
-            )}
+            </OperationalWorkspace>)}
           </>
         )}
       </main>
