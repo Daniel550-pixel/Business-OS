@@ -7,13 +7,12 @@ import {
   LockKeyhole,
   Network,
   Play,
-  Send,
   ShieldCheck,
   Sparkles,
   Target,
   Workflow,
 } from 'lucide-react';
-import { Agent, ExecutionRecord, Mission, ProposedAction, SystemRuntimeState, WorldNode, TemporalEpoch, ViewMode, OperatingMode } from '../types';
+import { Agent, ExecutionRecord, Mission, ProposedAction, SystemRuntimeState, WorldNode, TemporalEpoch, OperatingMode } from '../types';
 import { CommandCore } from './CommandCore';
 
 interface AgentScreenProps {
@@ -61,7 +60,6 @@ export const AgentScreen: React.FC<AgentScreenProps> = ({
   metrics,
   onSelectNode,
   onExecuteAction,
-  onOpenCommandCore,
   onOpenEvidence,
   onNavigateToView,
   onOpenMission,
