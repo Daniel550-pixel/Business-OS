@@ -73,6 +73,7 @@ export const AgentScreen: React.FC<AgentScreenProps> = ({
   const [stage, setStage] = useState<Stage>('command');
   const [commandHistory, setCommandHistory] = useState<Array<{ query: string; status: string; timestamp: string }>>([]);
   const [paletteOpen, setPaletteOpen] = useState(false);
+  const [workspaceMode, setWorkspaceMode] = useState<'investigation' | 'strategy' | 'finance' | 'research' | 'execution'>('investigation');
   const [activeAgentId, setActiveAgentId] = useState(agents[0]?.id || '');
   const [selectedAction, setSelectedAction] = useState<ProposedAction | null>(pendingActions[0] || null);
 
@@ -97,6 +98,12 @@ export const AgentScreen: React.FC<AgentScreenProps> = ({
     const handleCommandHistory = (event: Event) => {
       const detail = (event as CustomEvent<{ query?: string; status?: string; timestamp?: string }>).detail || {};
       if (!detail.query) return;
+      const query = detail.query.toLowerCase();
+      if (query.includes('campaign') || query.includes('strategy') || query.includes('plan')) setWorkspaceMode('strategy');
+      else if (query.includes('revenue') || query.includes('finance') || query.includes('cash') || query.includes('pricing')) setWorkspaceMode('finance');
+      else if (query.includes('research') || query.includes('competitor') || query.includes('market')) setWorkspaceMode('research');
+      else if (query.includes('execute') || query.includes('deploy') || query.includes('send') || query.includes('create')) setWorkspaceMode('execution');
+      else setWorkspaceMode('investigation');
       setCommandHistory((prev) => [
         { query: detail.query, status: detail.status || 'started', timestamp: detail.timestamp || new Date().toISOString() },
         ...prev.filter((item) => item.query !== detail.query),
@@ -201,7 +208,7 @@ export const AgentScreen: React.FC<AgentScreenProps> = ({
             <div className="border-b border-white/10 p-4 sm:p-5">
               <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
                 <div>
-                  <div className="font-mono text-[10px] tracking-widest text-slate-500">ACTIVE AGENT</div>
+                  <div className="font-mono text-[10px] tracking-widest text-slate-500">ACTIVE WORKSPACE // {workspaceMode.toUpperCase()}</div>
                   <div className="mt-1 flex items-center gap-2 text-sm text-white"><Sparkles className="h-4 w-4 text-cyan-300" />{activeAgent?.name || 'Executive Agent'}</div>
                 </div>
                 <div className="text-right">
@@ -229,8 +236,8 @@ export const AgentScreen: React.FC<AgentScreenProps> = ({
               <div className="border-b border-white/10 p-4 sm:p-5 xl:border-b-0 xl:border-r">
                 <div className="mb-4 flex items-center justify-between">
                   <div>
-                    <div className="font-mono text-[10px] tracking-widest text-slate-500">UNIFIED AGENT PIPELINE</div>
-                    <div className="mt-1 text-sm text-white">{STAGES[activeIndex]?.label} active</div>
+                    <div className="font-mono text-[10px] tracking-widest text-slate-500">CONTEXT-AWARE WORKSPACE</div>
+                    <div className="mt-1 text-sm text-white">{workspaceMode === 'investigation' ? 'Investigation workspace' : workspaceMode === 'strategy' ? 'Strategy workspace' : workspaceMode === 'finance' ? 'Financial decision workspace' : workspaceMode === 'research' ? 'Research workspace' : 'Execution workspace'}</div>
                   </div>
                   <Activity className="h-4 w-4 text-cyan-300" />
                 </div>
