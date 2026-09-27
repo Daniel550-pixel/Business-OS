@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
+import { Compass, Cpu, DollarSign, TrendingUp, Server, Users, Search, Radio, ShieldCheck } from 'lucide-react';
 import { Navigation } from './components/Navigation';
 import { CommandCenter } from './components/CommandCenter';
 import { BusinessWorld } from './components/BusinessWorld';
