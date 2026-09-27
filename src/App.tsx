@@ -439,22 +439,24 @@ export default function App() {
                 metrics={metrics}
                 onSelectNode={setSelectedNode}
                 onExecuteAction={handleOpenActionApproval}
-                onOpenCommandCore={() => {
-                  setIsCommandModalOpen(true);
-                  window.dispatchEvent(new CustomEvent('business-os:neural-flow', {
-                    detail: {
-                      stage: 'command',
-                      stageId: 'understand-perception',
-                      label: 'AGENT COMMAND',
-                      detail: 'Operator intent channel opened. Awaiting analysis input.',
-                    },
-                  }));
-                }}
                 onOpenEvidence={(title, claim, confidence) => handleOpenEvidence(title, claim, confidence)}
+                onOpenMission={(newM) => {
+                  handleCreateMission(newM);
+                  setActiveView('missions');
+                }}
+                onHighlightNodes={(nodeIds) => setHighlightedNodeIds(nodeIds)}
+                onOpenFocus={(objId) => handleTriggerFocus(objId)}
+                onSetEpoch={handleEpochChange}
+                onOpenScenarioModeling={() => setIsScenarioModalOpen(true)}
+                onSelectEntityId={(id) => {
+                  const match = initialHierarchyEntities.find((e) => e.id === id);
+                  if (match) setSelectedSpatialEntity(match);
+                }}
                 onNavigateToView={(view) => {
                   setActiveView(view);
                   setActiveFocusObjective(null);
                 }}
+                onSetOperatingMode={setOperatingMode}
               />
             )}
 
@@ -620,36 +622,7 @@ export default function App() {
         }}
       />
 
-      {/* Global AI Command Core Modal */}
-      {isCommandModalOpen && (
-        <CommandCore
-          isOpenAsModal={true}
-          onCloseModal={() => {
-            setIsCommandModalOpen(false);
-            window.dispatchEvent(new CustomEvent('business-os:neural-flow', { detail: { stage: 'neural', label: 'NEURAL FIELD', detail: 'Command surface closed. Unified agent intelligence remains active.' } }));
-          }}
-          onExecuteAction={handleOpenActionApproval}
-          onOpenMission={(newM) => {
-            handleCreateMission(newM);
-            setIsCommandModalOpen(false);
-            setActiveView('missions');
-          }}
-          onHighlightNodes={(nodeIds) => {
-            setHighlightedNodeIds(nodeIds);
-          }}
-          onOpenFocus={(objId) => {
-            handleTriggerFocus(objId);
-          }}
-          onSetEpoch={handleEpochChange}
-          onOpenScenarioModeling={() => setIsScenarioModalOpen(true)}
-          onSelectEntityId={(id) => {
-            const match = initialHierarchyEntities.find((e) => e.id === id);
-            if (match) setSelectedSpatialEntity(match);
-          }}
-          onNavigateToView={setActiveView}
-          onSetOperatingMode={setOperatingMode}
-        />
-      )}
+      {/* Command runtime is embedded in AgentScreen; no second command surface is mounted. */}
 
       {/* Policy Gate Action Approval Dialog */}
       <ApprovalModal
