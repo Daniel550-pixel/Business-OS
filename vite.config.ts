@@ -19,7 +19,7 @@ export default defineConfig(() => {
       // Keep the local shell stable: do not let Vite HMR/full-reload react to
       // background file changes while the Business OS is running.
       hmr: false,
-      watch: false,
+      watch: null,
     },
   };
 });
